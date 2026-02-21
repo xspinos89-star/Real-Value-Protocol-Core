@@ -1,4 +1,7 @@
 # Real Value Protocol (RVP) - Institutional ESG Ecosystem 🌍🏦
+## 📄 Documentation
+- [Download White Paper (Full Technical Analysis)](RVP_WhitePaper_Final.pdf)
+- [Download One-Pager (Executive Summary)](RVP_OnePager.pdf)
 
 **Transforming Financial Friction into Physical Value through RWA Tokenization.**
 
