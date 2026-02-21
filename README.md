@@ -1,15 +1,21 @@
-# Real Value Protocol (RVP) - Institutional ESG Edition
+# Real Value Protocol (RVP) - Institutional ESG Ecosystem 🌍🏦
 
-## 🚀 Live on Ethereum Sepolia
-The protocol is officially deployed. You can verify the smart contract and logic here:
-[View on Etherscan](https://sepolia.etherscan.io/tx/0xc2b71eacdd45c649ce962f735312df6095ffbf4889006d5a89a19c2cf8e58cbd)
+**Transforming Financial Friction into Physical Value through RWA Tokenization.**
 
-## 🛠 Key Features
-- **Circular Liquidity:** 90% of fees are programmatically reinvested into Green Assets.
-- **Social Impact Score (SIS):** On-chain tracking of ESG contributions per wallet.
-- **RWA Integration:** Designed to fund physical infrastructure (Solar, Bridges, Housing).
-- **Warning-Free Code:** Optimized for gas efficiency and security.
+## 🚀 Live On-Chain Verification (Ethereum Sepolia)
 
-## 📊 Mathematical Logic
-- **Recycling:** $V_{green} = Fee \times 0.90$
-- **Impact:** $SIS = V_{green} \times 10$
+* **Core Protocol Engine (The Recycler):** * **Contract:** `0x261174abfb883877498a9234059ffc723e920127`
+  * **TX Hash:** [0xc2b71eacdd45c649ce962f735312df6095ffbf4889006d5a89a19c2cf8e58cbd](https://sepolia.etherscan.io/tx/0xc2b71eacdd45c649ce962f735312df6095ffbf4889006d5a89a19c2cf8e58cbd)
+
+* **Governance Token ($RVT):** * **Initial Supply:** 1,000,000 RVT
+  * **TX Hash:** [0xc60d17412efead3144f5c1afa3fc2388d9d0adeef59fbf9f7fd69ce933e65440](https://sepolia.etherscan.io/tx/0xc60d17412efead3144f5c1afa3fc2388d9d0adeef59fbf9f7fd69ce933e65440)
+
+---
+
+## 🛠 Project Structure
+- `RealValueProtocol.sol`: Logic for the 90/10 fee recycling.
+- `RealValueToken.sol`: ERC-20 Governance & Social Impact rewards.
+
+---
+**Founder:** Christos Spinos  
+**Vision:** Anchoring digital liquidity to real-world infrastructure.
