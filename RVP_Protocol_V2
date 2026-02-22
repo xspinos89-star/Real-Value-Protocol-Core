@@ -1,0 +1,67 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+/**
+ * @title RealValueProtocol_V2
+ * @author Christos & Gemini
+ * @notice The "Air-Harvester" Engine: Captures the 0.10 interest/fees and turns them into Real World Assets.
+ */
+contract RealValueProtocol is ERC20 {
+    
+    address public immutable infrastructureFund; // The 90% (Physical Assets)
+    address public immutable aiTreasury;        // The 10% (Intelligence)
+    
+    uint256 public totalAirCaptured;
+
+    // Events for full blockchain transparency
+    event AirMaterialized(address indexed harvester, uint256 totalFee, uint256 infraAmount, uint256 aiAmount);
+
+    /**
+     * @param _infra The address of the Infrastructure Fund (The 0.90 reality)
+     * @param _ai The address of the AI Treasury (The 0.10 intelligence)
+     */
+    constructor(address _infra, address _ai) ERC20("Real Value Token", "RVT") {
+        require(_infra != address(0) && _ai != address(0), "Invalid addresses");
+        infrastructureFund = _infra;
+        aiTreasury = _ai;
+    }
+
+    /**
+     * @dev THE CORE LOGIC: This function captures the "Debt-Air" (fees/interest).
+     * It splits the flow 90/10 and Mints tokens as proof of tangible backing.
+     */
+    receive() external payable {
+        uint256 amount = msg.value;
+        require(amount > 0, "No air detected to harvest");
+
+        // Calculate the Split
+        uint256 toInfra = (amount * 90) / 100;
+        uint256 toAI = (amount * 10) / 100;
+
+        // 1. Materialize the Air into Physical Reality (90%)
+        // We use .call (the modern standard) to avoid warnings and ensure gas efficiency
+        (bool successInfra, ) = payable(infrastructureFund).call{value: toInfra}("");
+        require(successInfra, "Materialization to Infra failed");
+
+        // 2. Materialize the Air into Intelligence (10%)
+        (bool successAI, ) = payable(aiTreasury).call{value: toAI}("");
+        require(successAI, "Materialization to AI failed");
+
+        // 3. Reward the Harvester (Mint RVT Tokens)
+        // 1 RVT is minted for every unit of "Air" captured
+        _mint(msg.sender, amount);
+
+        totalAirCaptured += amount;
+
+        emit AirMaterialized(msg.sender, amount, toInfra, toAI);
+    }
+
+    /**
+     * @dev Returns the total amount of "Debt-Air" that has been turned into assets.
+     */
+    function getImpactReport() external view returns (uint256) {
+        return totalAirCaptured;
+    }
+}
