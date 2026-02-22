@@ -2,86 +2,94 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <title>RVP Protocol v3.1</title>
+    <title>RVP Protocol v3.2 - FINAL REPAIR</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
-        body { font-family: sans-serif; background: #0d1117; color: white; text-align: center; padding: 50px; }
-        .card { background: #161b22; border: 1px solid #30363d; padding: 30px; border-radius: 15px; display: inline-block; }
-        .btn { background: #238636; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: bold; }
-        .btn:hover { background: #2ea043; }
-        #status { margin: 20px; color: #8b949e; }
-        .dashboard { display: none; margin-top: 20px; }
+        body { font-family: sans-serif; background: #0d1117; color: white; text-align: center; padding: 20px; }
+        .card { background: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 15px; display: inline-block; width: 90%; max-width: 500px; }
+        .btn { background: #238636; color: white; border: none; padding: 15px 25px; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: bold; margin: 10px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .stat-box { background: #0d1117; padding: 10px; border-radius: 8px; border: 1px solid #30363d; }
+        .val { color: #58a6ff; font-weight: bold; display: block; font-size: 1.2rem; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h1>RVP CONTROL PANEL</h1>
-    <div id="status">Αναμονή για MetaMask...</div>
+    <h1>RVP CONTROL PANEL v3.2</h1>
+    <div id="status">Status: Connected ✅</div>
     
-    <button id="connectBtn" class="btn" onclick="connectWallet()">ΣΥΝΔΕΣΗ METAMASK</button>
+    <div id="dashboard">
+        <p style="font-size: 0.8rem;">Wallet: <span id="userAddr" style="color:#8b949e"></span></p>
+        
+        <div class="stat-grid">
+            <div class="stat-box">Deposit<span id="depVal" class="val">0 ETH</span></div>
+            <div class="stat-box">VP<span id="vpVal" class="val">0</span></div>
+            <div class="stat-box">AIR<span id="airVal" class="val">0</span></div>
+            <div class="stat-box">RWA<span id="rwaVal" class="val">0</span></div>
+        </div>
 
-    <div id="dashboard" class="dashboard">
-        <p>Wallet: <span id="userAddr" style="color:#58a6ff"></span></p>
-        <hr>
-        <button class="btn" onclick="sendDeposit()" style="background:#1f6feb">ΚΑΤΑΘΕΣΗ 0.1 ETH</button>
+        <button class="btn" onclick="sendDeposit()">ΚΑΤΑΘΕΣΗ 0.1 ETH</button>
+        <button class="btn" onclick="updateData()" style="background:#8b949e">UPDATE DATA</button>
     </div>
 </div>
 
 <script>
     const CONTRACT_ADDRESS = "0xF5796E92b7722749444B6002fD4A47C10B000000";
-    const ABI = ["function deposit() public payable"];
+    const ABI = [
+        "function deposit() public payable",
+        "function getVotingPower(address _user) public view returns (uint256)",
+        "function users(address) public view returns (uint256 deposit, uint256 physicalInfra, uint256 lastUpdate, uint256 accumulatedAir)",
+        "function totalInfraAir(address _user) public view returns (uint256)"
+    ];
 
     let signer, contract;
 
-    async function connectWallet() {
-        console.log("Το κουμπί πατήθηκε!");
-        
-        if (typeof window.ethereum === 'undefined') {
-            alert("Το MetaMask δεν βρέθηκε! Εγκατέστησέ το.");
-            return;
-        }
-
-        try {
-            // 1. Ζητάμε λογαριασμούς
-            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-            const account = accounts[0];
-            
-            // 2. Αρχικοποιούμε τον Provider με ethers
+    async function init() {
+        if (typeof window.ethereum !== 'undefined') {
             const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const accounts = await provider.send("eth_requestAccounts", []);
             signer = provider.getSigner();
             contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-
-            // 3. Ενημερώνουμε το UI
-            document.getElementById('connectBtn').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            document.getElementById('userAddr').innerText = account;
-            document.getElementById('status').innerText = "ΣΥΝΔΕΘΗΚΕ!";
-            
-            console.log("Σύνδεση επιτυχής με:", account);
-        } catch (error) {
-            console.error("Σφάλμα:", error);
-            alert("Η σύνδεση απέτυχε: " + error.message);
+            document.getElementById('userAddr').innerText = accounts[0];
+            updateData();
         }
+    }
+
+    async function updateData() {
+        try {
+            const addr = await signer.getAddress();
+            const userData = await contract.users(addr);
+            const vp = await contract.getVotingPower(addr);
+            const air = await contract.totalInfraAir(addr);
+
+            document.getElementById('depVal').innerText = ethers.utils.formatEther(userData.deposit) + " ETH";
+            document.getElementById('vpVal').innerText = ethers.utils.formatEther(vp);
+            document.getElementById('airVal').innerText = parseFloat(ethers.utils.formatEther(air)).toFixed(6);
+            document.getElementById('rwaVal').innerText = userData.physicalInfra.toString();
+        } catch (e) { console.error("Update failed", e); }
     }
 
     async function sendDeposit() {
         try {
-            document.getElementById('status').innerText = "Περίμενε το MetaMask...";
+            document.getElementById('status').innerText = "Ανοίγει το MetaMask...";
+            // Προσθέτουμε gasLimit για να μην αποτύχει η συναλλαγή
             const tx = await contract.deposit({ 
-                value: ethers.utils.parseEther("0.1") 
+                value: ethers.utils.parseEther("0.1"),
+                gasLimit: 300000 
             });
-            document.getElementById('status').innerText = "Η συναλλαγή στάλθηκε! Αναμονή...";
+            document.getElementById('status').innerText = "Η συναλλαγή στάλθηκε! ⏳";
             await tx.wait();
-            document.getElementById('status').innerText = "Η ΚΑΤΑΘΕΣΗ ΟΛΟΚΛΗΡΩΘΗΚΕ!";
-            alert("Επιτυχία!");
+            document.getElementById('status').innerText = "Η ΚΑΤΑΘΕΣΗ ΠΕΤΥΧΕ! 🎉";
+            updateData();
         } catch (error) {
             console.error(error);
-            alert("Αποτυχία κατάθεσης.");
-            document.getElementById('status').innerText = "Σφάλμα συναλλαγής.";
+            alert("Σφάλμα: Βεβαιώσου ότι έχεις αρκετά Sepolia ETH και πάτησες 'Confirm' στο MetaMask.");
+            document.getElementById('status').innerText = "Αποτυχία συναλλαγής.";
         }
     }
-</script>
 
+    window.onload = init;
+</script>
 </body>
 </html>
