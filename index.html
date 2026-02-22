@@ -52,10 +52,10 @@
     </div>
 
     <script>
-        // Η σωστή διεύθυνση συμβολαίου
+        // Η σωστή διεύθυνση
         const CONTRACT_ADDR = "0x30202fC44E18379B87A890fE846f4836474c4F80";
         
-        // ΤΟ ΠΛΗΡΕΣ ABI - Χωρίς αυτό η σελίδα βγάζει μηδέν
+        // ΤΟ ΠΛΗΡΕΣ ABI - Αυτό έλειπε στη φωτογραφία 95
         const ABI = [
             "function getVotingPower(address) view returns (uint256)",
             "function physicalInfrastructure() view returns (uint256)",
@@ -66,7 +66,7 @@
         let signer, contract;
 
         async function init() {
-            if (!window.ethereum) return alert("Please install MetaMask");
+            if (!window.ethereum) return alert("Install MetaMask");
             const provider = new ethers.BrowserProvider(window.ethereum);
             await provider.send("eth_requestAccounts", []);
             signer = await provider.getSigner();
@@ -87,7 +87,7 @@
                     contract.totalInfraAir()
                 ]);
 
-                // Μετατροπή από Wei σε ευανάγνωστα νούμερα
+                // Μετατροπή από Wei σε νούμερα
                 const vp = ethers.formatUnits(vpRaw, 18);
                 const rwa = ethers.formatUnits(rwaRaw, 18);
                 const air = ethers.formatUnits(airRaw, 18);
@@ -96,20 +96,17 @@
                 document.getElementById('rwa').innerText = parseFloat(rwa).toFixed(6) + " RWA";
                 document.getElementById('air').innerText = parseFloat(air).toFixed(6) + " RVT";
 
-                // Μπάρα προόδου
                 let progress = (parseFloat(rwa) / 0.1) * 100;
                 document.getElementById('rwaBar').style.width = Math.min(progress, 100) + "%";
                 
                 document.getElementById('status').innerText = "● Live on Sepolia | Block: " + await signer.provider.getBlockNumber();
-            } catch (e) { 
-                console.error("Update failed:", e); 
-            }
+            } catch (e) { console.error("Update error:", e); }
         }
 
         async function harvest() {
             try {
                 const tx = await contract.airHarvest();
-                document.getElementById('status').innerText = "⌛ Processing...";
+                document.getElementById('status').innerText = "⌛ Harvesting...";
                 await tx.wait();
                 update();
                 document.getElementById('status').innerText = "✅ Harvest Successful!";
