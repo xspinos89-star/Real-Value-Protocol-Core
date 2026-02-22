@@ -1,58 +1,31 @@
-# Real Value Protocol (RVP) - The Debt-Inversion Engine
+# Real Value Protocol (RVP) - Live MVP
 
-## 🌍 The Vision
-Current global finance is built on a "1.10 Trap": Every $1.00 created carries a $0.10 debt-air (interest/fees) that doesn't exist in the money supply. This leads to perpetual inflation and wealth extraction.
-
-**RVP Inverts the Cycle.** Instead of losing that 0.10 to banking fees, we harvest it and materialize it into Real World Assets (RWA) and Intelligence.
+## 🚀 The Vision
+RVP is a decentralized engine designed to invert the "Debt-Air" (the 0.10 interest/fee gap) inherent in legacy finance. Instead of losing value to intermediaries, the protocol harvests it and materializes it into Real World Assets (RWA) and Intelligence.
 
 ---
 
-## 🛠 The "Air-Harvester" Logic (V2)
-The RVP Smart Contract acts as a decentralized funnel that captures transactional "air" and anchors it into reality.
-
-### The 90/10 Split:
-- **90% Infrastructure Fund:** Direct allocation into physical assets (Renewable energy, hardware infrastructure).
-- **10% AI Treasury:** Funding for autonomous AI optimization to increase asset yield and efficiency.
-
-
+## 🛠 Proven Logic (Testnet Verified)
+The protocol captures incoming value and triggers an atomic split:
+- **90% Infrastructure Fund:** For physical asset acquisition.
+- **10% AI Treasury:** For autonomous yield optimization.
+- **1:1 Minting:** RVT Tokens are minted as proof of materialized value.
 
 ---
 
-## 💎 The RVT Token
-The **Real Value Token (RVT)** is not a speculative asset. It is a **Value-Backed Proof of Ownership**.
-- **Minting on Capture:** Tokens are minted ONLY when the protocol successfully harvests "Debt-Air."
-- **Intrinsic Value:** Every token represents a fractional share of the physical infrastructure and AI intelligence managed by the protocol.
+## 📊 Live Deployment Data (Sepolia)
+
+- **Smart Contract Address:** `0x12ea023829C4883763C89Aa4497F1152974623c6`
+- **Asset Token:** RVT (Real Value Token)
+- **Infrastructure Fund:** `0x34d43349991B43D176CB1c087f81Cd4418ca9640`
+- **AI Treasury:** `0xAD263d198A75dd64493ca836EC2e59a4365486dB`
 
 ---
 
-## 📊 Economic Comparison: Legacy vs. RVP
+## 💎 On-Chain Proof (The "Air-Harvest" Transaction)
+The following transaction demonstrates the 10 Finney "Air Capture" and the automatic routing of funds to the respective treasuries:
 
-| Metric | Legacy Debt System | Real Value Protocol (RVP) |
-| :--- | :--- | :--- |
-| **Origin of Value** | Debt (Liabilities) | Assets (Physicality) |
-| **The 0.10 "Air"** | Lost to Interest/Fees | Captured & Materialized |
-| **Impact on User** | Perpetual Debtor | Asset Shareholder |
-| **Systemic Result** | Devaluation & Inflation | Productivity & Deflation |
-
-
+**[View Live Transaction on Etherscan](https://sepolia.etherscan.io/tx/0x2f6348880c425873841229ae39a7351c8d73c34bffc6968d5b791828bc69fad)**
 
 ---
-
-## 🚀 Technical Implementation
-The protocol is built with **Solidity ^0.8.20** and utilizes the **OpenZeppelin** standard for secure, audited tokenomics.
-
-### Key Features:
-- **Atomic Materialization:** Instant routing of funds to Infrastructure and AI addresses.
-- **Modern Security:** Uses `.call` syntax to ensure gas efficiency and future-proof compatibility.
-- **Transparency:** All "Captured Air" is verifiable via the `getImpactReport()` function.
-
----
-
-## 🏁 Live Proof of Concept
-- **Network:** Ethereum Sepolia Testnet
-- **Contract Address:** `0x37B059c8fBA3E64F7a2a1AD55Cebf69bBd887cDF`
-- **Verified on Sepolia Etherscan: https://sepolia.etherscan.io/tx/0x5d29dadc03d7dbb43bed18f892f17fdeb2317a7a620252b8f328675fd95adb03
-- **Documentation:** See `/contracts/v2-air-harvester` for the full implementation.
-
----
-*Created by Christos - Transforming the ghost of debt into the power of reality.*
+*Created by Christos - Engineering the transition from debt-based to asset-backed economies.*
