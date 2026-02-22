@@ -20,6 +20,7 @@
         .btn-main:hover { background: #2ea043; transform: translateY(-2px); }
         .btn-harvest { background: transparent; border: 1px solid #58a6ff; color: #58a6ff; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 600; width: 100%; margin-top: 20px; transition: 0.3s; }
         .btn-harvest:hover { background: rgba(88, 166, 255, 0.1); }
+        #loadingMsg { color: #8b949e; font-style: italic; font-size: 12px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -41,73 +42,3 @@
             </div>
             
             <div class="stat-box">
-                <div class="label">Infrastructure Real Assets (RWA)</div>
-                <div id="physicalInfra" class="value" style="color: #3fb950;">0.00 Units</div>
-                <div class="progress-container">
-                    <div id="bar" class="progress-bar"></div>
-                </div>
-            </div>
-
-            <button class="btn-harvest" onclick="harvestAir()">🚀 Harvest Air to Infrastructure</button>
-        </div>
-    </div>
-
-    <script>
-        // ΒΑΛΕ ΤΗ ΔΙΕΥΘΥΝΣΗ ΣΟΥ ΕΔΩ:
-        const contractAddress = "0x30372f69466547690623631525a4773a9856a93d"; 
-        
-        const abi = [
-            "function getVotingPower(address _user) view returns (uint256)",
-            "function physicalInfrastructure() view returns (uint256)",
-            "function airHarvest() public",
-            "function totalInfraAir() view returns (uint256)"
-        ];
-
-        let provider, signer, contract;
-
-        async function connectWallet() {
-            if (window.ethereum) {
-                provider = new ethers.BrowserProvider(window.ethereum);
-                await provider.send("eth_requestAccounts", []);
-                signer = await provider.getSigner();
-                const address = await signer.getAddress();
-                
-                document.getElementById("connectionStatus").innerHTML = `<span class="status-dot"></span> Connected: ${address.substring(0,6)}...${address.substring(38)}`;
-                document.getElementById("connectSection").style.display = "none";
-                document.getElementById("dashboardSection").style.display = "block";
-                
-                contract = new ethers.Contract(contractAddress, abi, signer);
-                refreshData(address);
-                setInterval(() => refreshData(address), 5000);
-            }
-        }
-
-        async function refreshData(address) {
-            try {
-                const vpRaw = await contract.getVotingPower(address);
-                const physRaw = await contract.physicalInfrastructure();
-                
-                // Μορφοποίηση νούμερων (από Wei σε Ether)
-                const vp = parseFloat(ethers.formatUnits(vpRaw, 18)).toFixed(2);
-                const phys = parseFloat(ethers.formatUnits(physRaw, 18)).toFixed(4);
-
-                document.getElementById("votingPower").innerText = vp;
-                document.getElementById("physicalInfra").innerText = phys + " RWA Units";
-
-                // Πρόοδος μπάρας (Στόχος τα 0.1 RWA για αρχή)
-                let progress = (phys / 0.1) * 100;
-                document.getElementById("bar").style.width = Math.min(progress, 100) + "%";
-            } catch (e) { console.log(e); }
-        }
-
-        async function harvestAir() {
-            try {
-                const tx = await contract.airHarvest();
-                alert("Harvesting in progress... Wait for blockchain confirmation!");
-                await tx.wait();
-                alert("Success! Your Infrastructure has increased!");
-            } catch (e) { alert("Error: " + e.reason); }
-        }
-    </script>
-</body>
-</html>
