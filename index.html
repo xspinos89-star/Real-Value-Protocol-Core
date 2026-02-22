@@ -1,169 +1,130 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol v2.2 - Control Center</title>
+    <title>RVP Protocol v2.5 - Stable</title>
     <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0a0e14; color: #fff; text-align: center; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; max-width: 1000px; margin: 30px auto; }
-        .card { background: #161b22; padding: 20px; border-radius: 15px; border: 1px solid #30363d; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .val { font-size: 1.6rem; font-weight: bold; color: #58a6ff; display: block; margin-top: 10px; }
-        .btn { background: #238636; color: white; border: none; padding: 15px 25px; border-radius: 8px; cursor: pointer; font-size: 1rem; margin: 10px; font-weight: bold; }
-        .btn:hover { background: #2ea043; transform: translateY(-2px); }
-        .btn-harvest { background: #8957e5; }
-        .btn-harvest:hover { background: #a371f7; }
-        .btn-connect { background: #58a6ff; margin-bottom: 20px; }
-        .warning { color: #f85149; font-weight: bold; margin-top: 10px; display: none; background: rgba(248, 81, 73, 0.1); padding: 5px; border-radius: 5px; }
-        #global-stats { margin-top: 50px; padding: 30px; background: #0d1117; border-radius: 20px; border: 1px dashed #30363d; }
-        .status-bar { color: #8b949e; margin-bottom: 20px; font-size: 0.9rem; }
+        body { font-family: sans-serif; background: #0d1117; color: white; text-align: center; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: #161b22; padding: 20px; border-radius: 15px; border: 1px solid #30363d; }
+        .stat-card { background: #0d1117; padding: 15px; margin: 10px; border-radius: 10px; display: inline-block; width: 200px; }
+        .btn { background: #238636; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 5px; }
+        .btn:disabled { background: #30363d; cursor: not-allowed; }
+        .btn-connect { background: #1f6feb; }
+        #status { color: #8b949e; margin: 15px; font-family: monospace; }
+        .value { color: #58a6ff; font-size: 1.2rem; font-weight: bold; display: block; }
     </style>
 </head>
 <body>
 
-    <h1>RVP PROTOCOL v2.2</h1>
-    <p style="color: #8b949e;">The Great Inversion: Digital Debt to Physical RWA</p>
-    
-    <div id="status" class="status-bar">Status: Not Connected</div>
-    <button id="connectBtn" class="btn btn-connect" onclick="connectWallet()">🦊 CONNECT METAMASK</button>
+<div class="container">
+    <h1>RVP Dashboard v2.5</h1>
+    <div id="status">Status: Checking for MetaMask...</div>
+    <button id="connectBtn" class="btn btn-connect" onclick="connect()">Connect Wallet</button>
 
-    <div class="grid">
-        <div class="card">
-            <h3>Locked Deposit</h3>
-            <span id="depositVal" class="val">0 ETH</span>
+    <div id="dashboard" style="display:none;">
+        <div class="stat-card">
+            Deposit: <span id="depositVal" class="value">0 ETH</span>
         </div>
-        <div class="card">
-            <h3>Live Voting Power</h3>
-            <span id="votingPowerVal" class="val">0 VP</span>
-            <div id="penaltyWarning" class="warning">⚠️ STAGNATION PENALTY ACTIVE (-70%)</div>
+        <div class="stat-card">
+            Voting Power: <span id="vpVal" class="value">0 VP</span>
         </div>
-        <div class="card">
-            <h3>Physical Infra (RWA)</h3>
-            <span id="rwaVal" class="val" style="color: #39d353;">0 RWA</span>
-            <small style="color: #8b949e;">Bonus Multiplier: x2.0</small>
+        <div class="stat-card">
+            AIR: <span id="airVal" class="value">0 AIR</span>
         </div>
-        <div class="card">
-            <h3>Current Air</h3>
-            <span id="airVal" class="val" style="color: #f85149;">0 AIR</span>
+        <div class="stat-card">
+            RWA: <span id="rwaVal" class="value">0 RWA</span>
+        </div>
+
+        <div style="margin-top:20px;">
+            <button class="btn" onclick="executeTransaction('deposit')">Deposit 0.1 ETH</button>
+            <button class="btn" onclick="executeTransaction('harvest')" style="background:#8957e5">Harvest AIR</button>
         </div>
     </div>
+</div>
 
-    <div id="global-stats">
-        <h2>🌍 Global Network Impact</h2>
-        <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
-            <div>
-                <p>Global Air Index</p>
-                <span id="globalAirVal" style="font-size: 1.8rem; color: #f85149; font-weight: bold;">0</span>
-            </div>
-            <div>
-                <p>Total Community RWA</p>
-                <span id="globalRwaVal" style="font-size: 1.8rem; color: #39d353; font-weight: bold;">0</span>
-            </div>
-        </div>
-    </div>
+<script>
+    const contractAddress = "0xF5796E92b7722749444B6002fD4A47C10B000000";
+    const abi = [
+        "function deposit() public payable",
+        "function airHarvest() public",
+        "function getVotingPower(address _user) public view returns (uint256)",
+        "function users(address) public view returns (uint256 deposit, uint256 physicalInfra, uint256 lastUpdate, uint256 accumulatedAir)",
+        "function totalInfraAir(address _user) public view returns (uint256)",
+        "function physicalInfrastructure(address _user) public view returns (uint256)"
+    ];
 
-    <div style="margin-top: 40px;">
-        <button class="btn" onclick="depositETH()">Deposit 0.1 ETH</button>
-        <button class="btn btn-harvest" onclick="harvest()">Air Harvest</button>
-        <button class="btn" style="background:#da3633" onclick="withdraw()">Withdraw Principal</button>
-    </div>
+    let provider, signer, contract;
 
-    <script>
-        const contractAddress = "0xF5796E92b7722749444B6002fD4A47C10B000000";
-        const abi = [
-            "function deposit() public payable",
-            "function airHarvest() public",
-            "function withdraw() public",
-            "function getVotingPower(address _user) public view returns (uint256)",
-            "function users(address) public view returns (uint256 deposit, uint256 physicalInfra, uint256 lastUpdate, uint256 accumulatedAir)",
-            "function totalGlobalAir() public view returns (uint256)",
-            "function totalGlobalRWA() public view returns (uint256)",
-            "function totalInfraAir(address _user) public view returns (uint256)",
-            "function physicalInfrastructure(address _user) public view returns (uint256)"
-        ];
-
-        let provider, signer, contract;
-
-        async function connectWallet() {
-            if (window.ethereum) {
-                try {
-                    provider = new ethers.providers.Web3Provider(window.ethereum);
-                    await provider.send("eth_requestAccounts", []);
-                    signer = provider.getSigner();
-                    contract = new ethers.Contract(contractAddress, abi, signer);
-                    
-                    const addr = await signer.getAddress();
-                    document.getElementById('status').innerText = "Connected: " + addr.substring(0,6) + "..." + addr.substring(38);
-                    document.getElementById('connectBtn').style.display = "none";
-                    
-                    updateDashboard();
-                    setInterval(updateDashboard, 5000);
-                } catch (err) {
-                    console.error("Connection failed", err);
-                    alert("Please approve the connection in MetaMask.");
-                }
+    async function init() {
+        if (window.ethereum) {
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            const accounts = await provider.listAccounts();
+            if (accounts.length > 0) {
+                setupConnection(accounts[0]);
             } else {
-                alert("MetaMask not found!");
+                document.getElementById('status').innerText = "Wallet detected. Please click Connect.";
             }
+        } else {
+            document.getElementById('status').innerText = "Please install MetaMask.";
         }
+    }
 
-        async function updateDashboard() {
-            if (!contract || !signer) return;
-            try {
-                const userAddr = await signer.getAddress();
-                const userData = await contract.users(userAddr);
-                const vp = await contract.getVotingPower(userAddr);
-                const currentAir = await contract.totalInfraAir(userAddr);
-                const gAir = await contract.totalGlobalAir();
-                const gRwa = await contract.totalGlobalRWA();
-                const myRwa = await contract.physicalInfrastructure(userAddr);
+    async function connect() {
+        try {
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            setupConnection(accounts[0]);
+        } catch (err) {
+            console.error(err);
+            alert("Connection failed.");
+        }
+    }
 
-                document.getElementById('depositVal').innerText = ethers.utils.formatEther(userData.deposit) + " ETH";
-                document.getElementById('votingPowerVal').innerText = Number(ethers.utils.formatEther(vp)).toFixed(4) + " VP";
-                document.getElementById('airVal').innerText = Number(ethers.utils.formatEther(currentAir)).toFixed(4) + " AIR";
-                document.getElementById('rwaVal').innerText = Number(ethers.utils.formatEther(myRwa)).toFixed(4) + " RWA";
-                document.getElementById('globalAirVal').innerText = Number(ethers.utils.formatEther(gAir)).toFixed(2);
-                document.getElementById('globalRwaVal').innerText = Number(ethers.utils.formatEther(gRwa)).toFixed(2);
+    async function setupConnection(address) {
+        signer = provider.getSigner();
+        contract = new ethers.Contract(contractAddress, abi, signer);
+        document.getElementById('status').innerText = "Connected: " + address;
+        document.getElementById('connectBtn').style.display = "none";
+        document.getElementById('dashboard').style.display = "block";
+        updateData();
+        setInterval(updateData, 10000);
+    }
 
-                if (parseFloat(ethers.utils.formatEther(currentAir)) > parseFloat(ethers.utils.formatEther(userData.deposit)) && userData.deposit > 0) {
-                    document.getElementById('penaltyWarning').style.display = "block";
-                    document.getElementById('votingPowerVal').style.color = "#f85149";
-                } else {
-                    document.getElementById('penaltyWarning').style.display = "none";
-                    document.getElementById('votingPowerVal').style.color = "#58a6ff";
-                }
-            } catch (err) {
-                console.error("Update error", err);
+    async function updateData() {
+        try {
+            const userAddr = await signer.getAddress();
+            const userData = await contract.users(userAddr);
+            const vp = await contract.getVotingPower(userAddr);
+            const air = await contract.totalInfraAir(userAddr);
+            const rwa = await contract.physicalInfrastructure(userAddr);
+
+            document.getElementById('depositVal').innerText = ethers.utils.formatEther(userData.deposit) + " ETH";
+            document.getElementById('vpVal').innerText = parseFloat(ethers.utils.formatEther(vp)).toFixed(4);
+            document.getElementById('airVal').innerText = parseFloat(ethers.utils.formatEther(air)).toFixed(4);
+            document.getElementById('rwaVal').innerText = parseFloat(ethers.utils.formatEther(rwa)).toFixed(4);
+        } catch (e) { console.log("Update error", e); }
+    }
+
+    async function executeTransaction(type) {
+        try {
+            let tx;
+            if (type === 'deposit') {
+                tx = await contract.deposit({ value: ethers.utils.parseEther("0.1") });
+            } else {
+                tx = await contract.airHarvest();
             }
+            document.getElementById('status').innerText = "Transaction pending...";
+            await tx.wait();
+            document.getElementById('status').innerText = "Transaction Success!";
+            updateData();
+        } catch (err) {
+            console.error(err);
+            alert("Transaction failed. Check console.");
         }
+    }
 
-        async function depositETH() {
-            if (!contract) return alert("Connect Wallet first!");
-            try {
-                const tx = await contract.deposit({ value: ethers.utils.parseEther("0.1") });
-                await tx.wait();
-                updateDashboard();
-            } catch (err) { console.error(err); }
-        }
-
-        async function harvest() {
-            if (!contract) return alert("Connect Wallet first!");
-            try {
-                const tx = await contract.airHarvest();
-                await tx.wait();
-                updateDashboard();
-            } catch (err) { console.error(err); }
-        }
-
-        async function withdraw() {
-            if (!contract) return alert("Connect Wallet first!");
-            try {
-                const tx = await contract.withdraw();
-                await tx.wait();
-                updateDashboard();
-            } catch (err) { console.error(err); }
-        }
-    </script>
+    window.onload = init;
+</script>
 </body>
 </html>
