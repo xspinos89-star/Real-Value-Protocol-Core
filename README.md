@@ -1,31 +1,30 @@
-# Real Value Protocol (RVP) - Live MVP
+# RVP Protocol (Real Value Protocol) - V10 Final
 
-## 🚀 The Vision
-RVP is a decentralized engine designed to invert the "Debt-Air" (the 0.10 interest/fee gap) inherent in legacy finance. Instead of losing value to intermediaries, the protocol harvests it and materializes it into Real World Assets (RWA) and Intelligence.
+> **The World's First Infrastructure Realization Engine.** > Reversing the banking logic by turning speculative liquidity into tangible assets.
 
----
+## 🏛 Overview
+RVP is a decentralized protocol that allows users to leverage their capital without spending it. By locking ETH in a secure vault, the protocol generates "Infrastructure Air" (RVT) which is then materialized into recorded physical and digital assets.
 
-## 🛠 Proven Logic (Testnet Verified)
-The protocol captures incoming value and triggers an atomic split:
-- **90% Infrastructure Fund:** For physical asset acquisition.
-- **10% AI Treasury:** For autonomous yield optimization.
-- **1:1 Minting:** RVT Tokens are minted as proof of materialized value.
+## 🚀 Core Features
+- **Capital Vault:** 100% non-custodial principal protection.
+- **Materialization Bridge:** Logic to convert digital tokens into physical/digital infrastructure records.
+- **Time-Squared Governance:** $Voting Power = Balance \times Time^2$. Influence grows exponentially with loyalty.
+- **Soulbound Architecture:** Prevents market manipulation by making governance tokens non-transferable.
 
----
+## 🧬 Mathematical Foundation
+### The Anti-Inflation Engine
+The protocol ensures that the total "Air" issued is always moving towards 100% asset backing:
+$$V_{Real} = \frac{I_{physical} + I_{digital}}{A_{issued}} \to 1$$
 
-## 📊 Live Deployment Data (Sepolia)
+## 📁 Repository Contents
+- `/contracts`: `RVPMasterV10Final.sol` (The core engine)
+- `/docs`: `RVP_Whitepaper_V10.pdf` & `RVP_OnePager.pdf`
+- `/scripts`: Deployment and interaction scripts.
 
-- **Smart Contract Address:** `0x12ea023829C4883763C89Aa4497F1152974623c6`
-- **Asset Token:** RVT (Real Value Token)
-- **Infrastructure Fund:** `0x34d43349991B43D176CB1c087f81Cd4418ca9640`
-- **AI Treasury:** `0xAD263d198A75dd64493ca836EC2e59a4365486dB`
+## 🛠 Usage
+1. **Deposit:** Lock ETH to generate RVT tokens.
+2. **Hold:** Watch your `Voting Power` grow via the time-compounding formula.
+3. **Build:** Use the `buildPhysicalInfra` or `buildDigitalInfra` functions to materialize the air into assets.
 
----
-
-## 💎 On-Chain Proof (The "Air-Harvest" Transaction)
-The following transaction demonstrates the 10 Finney "Air Capture" and the automatic routing of funds to the respective treasuries:
-
-**[View Live Transaction on Etherscan](https://sepolia.etherscan.io/tx/0x2f6348880c425873841229ae39a7351c8d73c34bffc6968d5b791828bc69fad)**
-
----
-*Created by Christos - Engineering the transition from debt-based to asset-backed economies.*
+## ⚖️ License
+MIT License - Developed by Christos Spinos with AI Tools (RVP Core Team)
