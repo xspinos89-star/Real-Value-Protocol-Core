@@ -16,7 +16,7 @@
         .progress-fill { background: linear-gradient(90deg, var(--success), var(--primary)); height: 100%; width: 0%; border-radius: 4px; transition: width 1s ease; }
         button { background: #238636; color: white; border: none; padding: 18px; border-radius: 14px; width: 100%; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 15px; transition: 0.2s; }
         button:hover { background: #2ea043; transform: scale(1.02); }
-        .air-value { color: var(--danger) !important; }
+        .air-value { color: #ff6b6b !important; } /* Έντονο κόκκινο για τον αέρα */
     </style>
 </head>
 <body>
@@ -42,17 +42,17 @@
             </div>
 
             <div class="stat-card">
-                <div class="label">Total Infra Air (Unbacked Debt)</div>
+                <div class="label">Total Infra Air (Debt)</div>
                 <div id="air" class="value air-value">0.0000 RVT</div>
             </div>
 
             <button onclick="harvest()">🚀 Execute Air Harvest</button>
-            <p id="status" style="font-size: 11px; color: #8b949e; margin-top: 20px;">● System Synchronized</p>
+            <p id="status" style="font-size: 11px; color: #8b949e; margin-top: 20px;">● System Live</p>
         </div>
     </div>
 
     <script>
-        // Η διεύθυνση είναι πλέον "κρυμμένη" στον κώδικα
+        // Η διεύθυνση είναι πλέον ενσωματωμένη εδώ και ΔΕΝ θα φαίνεται στην οθόνη
         const CONTRACT_ADDR = "0x30202fC44E18379B87A890fE846f4836474c4F80";
         const ABI = [
             "function getVotingPower(address) view returns (uint256)",
@@ -85,30 +85,26 @@
                     contract.totalInfraAir()
                 ]);
 
-                const vp = ethers.formatUnits(vpRaw, 18);
-                const rwa = ethers.formatUnits(rwaRaw, 18);
-                const air = ethers.formatUnits(airRaw, 18);
+                // Μετατροπή από Wei (18 δεκαδικά)
+                document.getElementById('vp').innerText = parseFloat(ethers.formatUnits(vpRaw, 18)).toFixed(4);
+                document.getElementById('rwa').innerText = parseFloat(ethers.formatUnits(rwaRaw, 18)).toFixed(6) + " RWA";
+                document.getElementById('air').innerText = parseFloat(ethers.formatUnits(airRaw, 18)).toFixed(6) + " RVT";
 
-                document.getElementById('vp').innerText = parseFloat(vp).toFixed(4);
-                document.getElementById('rwa').innerText = parseFloat(rwa).toFixed(6) + " RWA";
-                document.getElementById('air').innerText = parseFloat(air).toFixed(6) + " RVT";
-
-                // Μπάρα προόδου (Target 0.1 RWA)
-                let progress = (parseFloat(rwa) / 0.1) * 100;
+                let progress = (parseFloat(ethers.formatUnits(rwaRaw, 18)) / 0.1) * 100;
                 document.getElementById('rwaBar').style.width = Math.min(progress, 100) + "%";
                 
-                document.getElementById('status').innerText = "● Live Data | Block: " + await signer.provider.getBlockNumber();
+                document.getElementById('status').innerText = "● Synchronized with Blockchain";
             } catch (e) { console.error(e); }
         }
 
         async function harvest() {
             try {
                 const tx = await contract.airHarvest();
-                document.getElementById('status').innerText = "⏳ Processing Harvest...";
+                document.getElementById('status').innerText = "⌛ Confirming Harvest...";
                 await tx.wait();
                 update();
-                document.getElementById('status').innerText = "✅ Harvest Successful!";
-            } catch (e) { alert("Transaction failed"); }
+                document.getElementById('status').innerText = "✅ Harvest Complete!";
+            } catch (e) { alert("Transaction failed or rejected"); }
         }
     </script>
 </body>
