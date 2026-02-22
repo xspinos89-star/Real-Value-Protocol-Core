@@ -3,114 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Full Terminal</title>
+    <title>RVP Protocol | Live Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
-        :root { --primary: #58a6ff; --success: #3fb950; --danger: #f85149; --bg: #0d1117; --card: #161b22; }
-        body { background: #05070a; color: #c9d1d9; font-family: 'Inter', system-ui, sans-serif; text-align: center; padding: 20px; margin: 0; }
-        .container { background: var(--card); border: 1px solid #30363d; border-radius: 24px; padding: 30px; display: inline-block; width: 95%; max-width: 420px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); margin-top: 40px; }
-        .stat-card { background: rgba(0,0,0,0.2); border: 1px solid #30363d; padding: 16px; border-radius: 12px; margin: 12px 0; text-align: left; }
-        .label { color: #8b949e; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
-        .value { color: #fff; font-size: 18px; font-weight: 700; margin-top: 4px; font-family: 'Roboto Mono', monospace; }
-        .progress-bg { background: #21262d; height: 6px; border-radius: 3px; margin-top: 10px; }
-        .progress-fill { background: var(--success); height: 100%; width: 0%; border-radius: 3px; transition: 1s; }
-        .btn { background: #238636; color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.2s; }
-        .btn:hover { background: #2ea043; }
-        .address-tag { font-size: 11px; color: var(--primary); background: rgba(88,166,255,0.1); padding: 4px 8px; border-radius: 6px; display: inline-block; margin-bottom: 15px; }
+        :root { --primary: #58a6ff; --success: #3fb950; --danger: #f85149; --bg: #05070a; --card: #0d1117; }
+        body { background: var(--bg); color: #c9d1d9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 20px; margin: 0; }
+        .container { background: var(--card); border: 1px solid #30363d; border-radius: 28px; padding: 35px; display: inline-block; width: 90%; max-width: 450px; box-shadow: 0 25px 60px rgba(0,0,0,0.7); margin-top: 30px; }
+        .stat-card { background: rgba(255,255,255,0.02); border: 1px solid #30363d; padding: 18px; border-radius: 16px; margin: 12px 0; text-align: left; }
+        .label { color: #8b949e; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        .value { color: #fff; font-size: 20px; font-weight: 700; margin-top: 6px; font-family: 'Courier New', monospace; }
+        .progress-bg { background: #21262d; height: 8px; border-radius: 4px; margin-top: 10px; }
+        .progress-fill { background: linear-gradient(90deg, var(--success), var(--primary)); height: 100%; width: 0%; border-radius: 4px; transition: width 1s ease; }
+        button { background: #238636; color: white; border: none; padding: 18px; border-radius: 14px; width: 100%; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 15px; transition: 0.2s; }
+        button:hover { background: #2ea043; transform: scale(1.02); }
+        .status-bar { font-size: 11px; color: #8b949e; margin-top: 20px; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2 style="color:var(--primary); margin-bottom:5px;">RVP Protocol</h2>
-    <div id="addrDisplay" style="display:none" class="address-tag"></div>
+    <div class="container">
+        <h1 style="color: var(--primary); margin-bottom: 5px;">RVP Protocol</h1>
+        <p style="font-size: 13px; color: #8b949e; margin-bottom: 25px;">Infrastructure Inversion v1.0</p>
 
-    <div id="setup">
-        <button class="btn" onclick="init()">Connect Protocol</button>
+        <div id="authSection">
+            <button onclick="init()">Connect Protocol Terminal</button>
+        </div>
+
+        <div id="mainDashboard" style="display:none">
+            <div class="stat-card">
+                <div class="label">Live Voting Power</div>
+                <div id="vpValue" class="value">0.0000</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="label">Physical Infrastructure (RWA)</div>
+                <div id="rwaValue" class="value" style="color: var(--success);">0.0000 RWA</div>
+                <div class="progress-bg"><div id="rwaBar" class="progress-fill"></div></div>
+            </div>
+
+            <div class="stat-card">
+                <div class="label">Connected Contract</div>
+                <div id="contractAddr" style="font-size: 10px; color: var(--primary); word-break: break-all; margin-top:5px;"></div>
+            </div>
+
+            <button onclick="harvest()">🚀 Execute Air Harvest</button>
+            
+            <div id="statusUpdate" class="status-bar">● Synchronized with Sepolia</div>
+        </div>
     </div>
 
-    <div id="dash" style="display:none">
-        <div class="stat-card">
-            <div class="label">Live Voting Power</div>
-            <div id="vp" class="value">0.0000</div>
-        </div>
-        <div class="stat-card">
-            <div class="label">Physical Infrastructure (RWA)</div>
-            <div id="rwa" class="value" style="color:var(--success)">0.0000</div>
-            <div class="progress-bg"><div id="rwaBar" class="progress-fill"></div></div>
-        </div>
-        <div class="stat-card">
-            <div class="label">Total Infra Air (Debt)</div>
-            <div id="air" class="value" style="color:var(--danger)">0.0000</div>
-        </div>
-        <button class="btn" onclick="harvest()" style="background:var(--primary)">🚀 Air Harvest</button>
-        <p id="msg" style="font-size:11px; color:#8b949e; margin-top:15px;">Synchronized with Sepolia</p>
-    </div>
-</div>
-
-<script>
-    const ADDR = "0x30372f69466547690623631525a4773a9856a93d";
-    const ABI = [
-        "function getVotingPower(address) view returns (uint256)",
-        "function physicalInfrastructure() view returns (uint256)",
-        "function totalInfraAir() view returns (uint256)",
-        "function airHarvest() public"
-    ];
-    let contract, signer;
-
-    async function init() {
-        if (!window.ethereum) return alert("Install MetaMask");
-        const provider = new ethers.BrowserProvider(window.ethereum);
+    <script>
+        // Η Σταθερή Διεύθυνση του Συμβολαίου σου
+        const CONTRACT_ADDRESS = "0x3020230F8D1C5EA188f00Ef9b0fCBA1A424c4F80";
         
-        // Network Check (Sepolia is 11155111)
-        const net = await provider.getNetwork();
-        if (net.chainId !== 11155111n) {
-            alert("Please switch MetaMask to Sepolia Network!");
-            return;
+        const ABI = [
+            "function getVotingPower(address) view returns (uint256)",
+            "function physicalInfrastructure() view returns (uint256)",
+            "function airHarvest() public"
+        ];
+
+        let signer, contract;
+
+        async function init() {
+            if (!window.ethereum) return alert("Please install MetaMask!");
+            
+            try {
+                const provider = new ethers.BrowserProvider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = await provider.getSigner();
+                
+                contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+                
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('mainDashboard').style.display = 'block';
+                document.getElementById('contractAddr').innerText = CONTRACT_ADDRESS;
+                
+                update();
+                setInterval(update, 5000); // Αυτόματη ανανέωση κάθε 5 δευτερόλεπτα
+            } catch (error) {
+                console.error("Initialization failed:", error);
+                alert("Connection failed!");
+            }
         }
 
-        await provider.send("eth_requestAccounts", []);
-        signer = await provider.getSigner();
-        contract = new ethers.Contract(ADDR, ABI, signer);
-        
-        const myAddr = await signer.getAddress();
-        document.getElementById('addrDisplay').innerText = "Wallet: " + myAddr.substring(0,6)+"..."+myAddr.substring(38);
-        document.getElementById('addrDisplay').style.display = "inline-block";
-        document.getElementById('setup').style.display = "none";
-        document.getElementById('dash').style.display = "block";
-        
-        update();
-        setInterval(update, 5000);
-    }
+        async function update() {
+            try {
+                const user = await signer.getAddress();
+                
+                // Τραβάμε τα δεδομένα από το blockchain
+                const [vpRaw, rwaRaw] = await Promise.all([
+                    contract.getVotingPower(user),
+                    contract.physicalInfrastructure()
+                ]);
 
-    async function update() {
-        try {
-            const user = await signer.getAddress();
-            const [v, p, a] = await Promise.all([
-                contract.getVotingPower(user),
-                contract.physicalInfrastructure(),
-                contract.totalInfraAir()
-            ]);
+                // Μετατροπή από Wei σε μονάδες (18 δεκαδικά)
+                const vp = ethers.formatUnits(vpRaw, 18);
+                const rwa = ethers.formatUnits(rwaRaw, 18);
 
-            document.getElementById('vp').innerText = parseFloat(ethers.formatUnits(v, 18)).toFixed(4);
-            document.getElementById('rwa').innerText = parseFloat(ethers.formatUnits(p, 18)).toFixed(6) + " RWA";
-            document.getElementById('air').innerText = parseFloat(ethers.formatUnits(a, 18)).toFixed(6) + " RVT";
-            
-            let prog = (parseFloat(ethers.formatUnits(p, 18)) / 0.1) * 100;
-            document.getElementById('rwaBar').style.width = Math.min(prog, 100) + "%";
-        } catch (e) { console.log(e); }
-    }
+                // Εμφάνιση στο Dashboard
+                document.getElementById('vpValue').innerText = parseFloat(vp).toFixed(4);
+                document.getElementById('rwaValue').innerText = parseFloat(rwa).toFixed(6) + " RWA";
 
-    async function harvest() {
-        try {
-            document.getElementById('msg').innerText = "⌛ Confirm in MetaMask...";
-            const tx = await contract.airHarvest();
-            document.getElementById('msg').innerText = "🚀 Transaction Sent...";
-            await tx.wait();
-            document.getElementById('msg').innerText = "✅ Harvest Complete!";
-            update();
-        } catch (e) { document.getElementById('msg').innerText = "❌ Transaction Failed"; }
-    }
-</script>
+                // Μπάρα προόδου (Με στόχο το 0.1 για το πρώτο στάδιο)
+                let progress = (parseFloat(rwa) / 0.1) * 100;
+                document.getElementById('rwaBar').style.width = Math.min(progress, 100) + "%";
+                
+                document.getElementById('statusUpdate').innerText = "● Live Data @ Block: " + await signer.provider.getBlockNumber();
+                document.getElementById('statusUpdate').style.color = "#3fb950";
+            } catch (e) {
+                console.error("Update error:", e);
+                document.getElementById('statusUpdate').innerText = "● Sync Error";
+                document.getElementById('statusUpdate').style.color = "#f85149";
+            }
+        }
+
+        async function harvest() {
+            try {
+                document.getElementById('statusUpdate').innerText = "⏳ Confirming in MetaMask...";
+                const tx = await contract.airHarvest();
+                await tx.wait();
+                document.getElementById('statusUpdate').innerText = "✅ Harvest Successful!";
+                update();
+            } catch (e) {
+                document.getElementById('statusUpdate').innerText = "❌ Transaction Failed";
+            }
+        }
+    </script>
 </body>
 </html>
