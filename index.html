@@ -3,68 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol v3.5 - Advanced Terminal</title>
+    <title>RVP Protocol v5.0 - Core Strategy</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
-        :root { --primary: #00d4ff; --secondary: #0055ff; --bg: #05070a; --card-bg: #0f172a; --text: #e2e8f0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .dashboard { width: 90%; max-width: 900px; background: var(--card-bg); border-radius: 24px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; }
-        h1 { margin: 0; font-size: 1.8rem; background: linear-gradient(45deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        .stat-card { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
-        .stat-card:hover { border-color: var(--primary); transform: translateY(-5px); }
-        .label { color: #94a3b8; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
-        .value { display: block; font-size: 1.5rem; font-weight: bold; margin-top: 10px; color: #fff; }
-        .btn-group { margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap; }
-        .btn { padding: 15px 30px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; transition: 0.3s; flex: 1; min-width: 150px; }
-        .btn-main { background: linear-gradient(45deg, var(--primary), var(--secondary)); color: white; box-shadow: 0 4px 15px rgba(0,212,255,0.3); }
-        .btn-main:hover { opacity: 0.9; transform: scale(1.02); }
-        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
-        #status-tag { font-size: 0.8rem; padding: 5px 12px; border-radius: 20px; background: rgba(255,0,0,0.2); color: #ff4d4d; }
-        .wallet-info { font-family: monospace; font-size: 0.8rem; color: #64748b; }
+        :root { --primary: #00d4ff; --secondary: #0055ff; --bg: #020408; --card: #0f172a; --accent: #00ff88; --danger: #ff4d4d; --gold: #ffcc00; }
+        body { background: var(--bg); color: #f8fafc; font-family: 'Segoe UI', system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .terminal { width: 95%; max-width: 1050px; background: var(--card); border-radius: 24px; padding: 40px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 30px 70px rgba(0,0,0,0.8); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px; border-bottom: 2px solid rgba(0,212,255,0.1); padding-bottom: 25px; }
+        h1 { margin: 0; font-size: 1.6rem; letter-spacing: 2px; text-transform: uppercase; background: linear-gradient(90deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 20px; }
+        .card { background: rgba(255,255,255,0.02); padding: 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); transition: 0.4s; position: relative; }
+        .card:hover { transform: translateY(-5px); border-color: var(--primary); background: rgba(0,212,255,0.03); }
+        .card.secure { border: 1px solid var(--gold); background: rgba(255, 204, 0, 0.02); }
+        
+        .label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
+        .value { display: block; font-size: 1.7rem; font-weight: 800; margin-top: 10px; font-family: 'Courier New', monospace; overflow: hidden; text-overflow: ellipsis; }
+        .sub-text { font-size: 0.65rem; color: #64748b; margin-top: 8px; display: block; }
+
+        .anti-inf-bar { grid-column: 1 / -1; background: rgba(0, 255, 136, 0.05); border: 1px solid var(--accent); padding: 15px; border-radius: 12px; display: flex; justify-content: space-around; font-size: 0.8rem; font-weight: bold; color: var(--accent); margin-bottom: 20px; }
+
+        .btn-group { display: flex; gap: 15px; margin-top: 35px; }
+        .btn { flex: 1; padding: 18px; border-radius: 14px; border: none; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
+        .btn-main { background: linear-gradient(45deg, var(--primary), var(--secondary)); color: white; box-shadow: 0 10px 20px rgba(0, 85, 255, 0.3); }
+        .btn-main:hover { filter: brightness(1.2); transform: scale(1.02); }
+        .btn-outline { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); }
+
+        .status-tag { font-size: 0.7rem; padding: 4px 12px; border-radius: 20px; border: 1px solid var(--accent); color: var(--accent); }
     </style>
 </head>
 <body>
 
-<div class="dashboard">
+<div class="terminal">
     <div class="header">
         <div>
-            <h1>RVP PROTOCOL <span style="font-size: 0.8rem; vertical-align: middle; opacity: 0.6;">v3.5</span></h1>
-            <div id="walletDisplay" class="wallet-info">Wallet: Not Connected</div>
+            <h1>RVP ANTI-INFLATION PROTOCOL</h1>
+            <span id="walletDisp" style="font-size: 0.75rem; color: #64748b; font-family: monospace;">INITIALIZING...</span>
         </div>
-        <div id="status-tag">SYSTEM OFFLINE</div>
+        <div class="status-tag">STRATEGY v5.0</div>
     </div>
 
-    <div id="setupView">
-        <button class="btn btn-main" style="width: 100%;" onclick="connect()">INITIALIZE CONNECTION</button>
+    <div class="anti-inf-bar">
+        <span>MODE: ASSET RECYCLING</span>
+        <span>PRINCIPAL PROTECTION: ACTIVE</span>
+        <span>INFLATION: STABILIZED</span>
     </div>
 
-    <div id="mainView" style="display: none;">
-        <div class="stats-grid">
-            <div class="stat-card">
-                <span class="label">Locked Deposit</span>
-                <span id="depVal" class="value">0.00 ETH</span>
-            </div>
-            <div class="stat-card">
-                <span class="label">Voting Power</span>
-                <span id="vpVal" class="value">0.00 VP</span>
-            </div>
-            <div class="stat-card">
-                <span class="label">AIR Balance</span>
-                <span id="airVal" class="value" style="color: #00ff88;">0.000000</span>
-            </div>
-            <div class="stat-card">
-                <span class="label">RWA Assets</span>
-                <span id="rwaVal" class="value">0 Units</span>
-            </div>
+    <div class="grid">
+        <div class="card secure">
+            <span class="label">Safe Capital (Protected)</span>
+            <span id="depVal" class="value" style="color: var(--gold);">0.00 ETH</span>
+            <span class="sub-text">Non-Inflationary Principal</span>
         </div>
+        <div class="card">
+            <span class="label">Voting Power</span>
+            <span id="vpVal" class="value">0.00 VP</span>
+            <span class="sub-text">Network Weight</span>
+        </div>
+        <div class="card">
+            <span class="label">Floating AIR</span>
+            <span id="airVal" class="value" style="color: var(--accent);">0.000000</span>
+            <span class="sub-text" id="statusMsg">Stable Flow</span>
+        </div>
+        <div class="card">
+            <span class="label">Recycled RWA</span>
+            <span id="rwaVal" class="value">0 Units</span>
+            <span class="sub-text" id="diffVal">Difficulty: 1.0x</span>
+        </div>
+    </div>
 
-        <div class="btn-group">
-            <button class="btn btn-main" onclick="deposit()">DEPOSIT 0.1 ETH</button>
-            <button class="btn btn-secondary" onclick="harvest()">HARVEST AIR</button>
-            <button class="btn btn-secondary" style="background: #334155;" onclick="updateData()">REFRESH</button>
-        </div>
+    <div class="btn-group">
+        <button class="btn btn-main" onclick="deposit()">Stake Assets (0.1 ETH)</button>
+        <button class="btn btn-outline" onclick="harvest()">Manual Harvest & Build</button>
+        <button class="btn btn-outline" onclick="updateData()" style="flex: 0.5;">Sync</button>
     </div>
 </div>
 
@@ -80,24 +91,15 @@
 
     let provider, signer, contract;
 
-    async function connect() {
-        if (!window.ethereum) return alert("MetaMask not found!");
-        try {
-            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            signer = provider.getSigner();
-            contract = new ethers.Contract(CONTRACT_ADDR, ABI, signer);
-            
-            document.getElementById('setupView').style.display = 'none';
-            document.getElementById('mainView').style.display = 'block';
-            document.getElementById('status-tag').innerText = "SYSTEM ACTIVE";
-            document.getElementById('status-tag').style.background = "rgba(0, 255, 136, 0.2)";
-            document.getElementById('status-tag').style.color = "#00ff88";
-            document.getElementById('walletDisplay').innerText = "Wallet: " + accounts[0].substring(0,6) + "..." + accounts[0].substring(38);
-            
-            updateData();
-            setInterval(updateData, 15000); // Αυτόματη ανανέωση κάθε 15 δευτερόλεπτα
-        } catch (e) { alert("Connection failed!"); }
+    async function init() {
+        if (!window.ethereum) return;
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        const accounts = await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        contract = new ethers.Contract(CONTRACT_ADDR, ABI, signer);
+        document.getElementById('walletDisp').innerText = "Account: " + accounts[0].substring(0,6) + "..." + accounts[0].substring(38);
+        updateData();
+        setInterval(updateData, 10000); 
     }
 
     async function updateData() {
@@ -106,37 +108,50 @@
             const data = await contract.users(user);
             const vp = await contract.getVotingPower(user);
             const air = await contract.totalInfraAir(user);
+            
+            // Formatters
+            const depNum = parseFloat(ethers.utils.formatEther(data.deposit));
+            const airNum = parseFloat(ethers.utils.formatEther(air));
+            
+            // Διόρθωση για την εμφάνιση των RWA (αν το νούμερο είναι τεράστιο, το κάνουμε ευανάγνωστο)
+            let rwaVal = data.physicalInfra.toString();
+            if (rwaVal.length > 10) {
+                rwaVal = parseFloat(ethers.utils.formatUnits(data.physicalInfra, 18)).toFixed(2);
+            }
 
-            document.getElementById('depVal').innerText = ethers.utils.formatEther(data.deposit) + " ETH";
+            document.getElementById('depVal').innerText = depNum.toFixed(2) + " ETH";
             document.getElementById('vpVal').innerText = parseFloat(ethers.utils.formatEther(vp)).toFixed(2);
-            document.getElementById('airVal').innerText = parseFloat(ethers.utils.formatEther(air)).toFixed(6);
-            document.getElementById('rwaVal').innerText = data.physicalInfra.toString() + " Units";
-        } catch (e) { console.error("Sync error", e); }
+            document.getElementById('airVal').innerText = airNum.toFixed(6);
+            document.getElementById('rwaVal').innerText = rwaVal + " Units";
+
+            // Difficulty Logic
+            const difficulty = (1 + (parseFloat(rwaVal) * 0.05)).toFixed(1);
+            document.getElementById('diffVal').innerText = "Anti-Inflation Difficulty: " + difficulty + "x";
+
+            if(airNum > 0.05) {
+                document.getElementById('statusMsg').innerText = "Auto-Build Recommended";
+                document.getElementById('statusMsg').style.color = "var(--gold)";
+            }
+        } catch (e) { console.log("Re-syncing..."); }
     }
 
     async function deposit() {
         try {
-            const tx = await contract.deposit({ 
-                value: ethers.utils.parseEther("0.1"),
-                gasLimit: 300000 
-            });
+            const tx = await contract.deposit({ value: ethers.utils.parseEther("0.1"), gasLimit: 300000 });
             await tx.wait();
             updateData();
-            alert("Deposit Successful!");
-        } catch (e) { 
-            console.error(e);
-            alert("Check MetaMask: Make sure you have enough Sepolia ETH and confirm the transaction!");
-        }
+        } catch (e) { console.error(e); }
     }
 
     async function harvest() {
         try {
-            const tx = await contract.airHarvest({ gasLimit: 200000 });
+            const tx = await contract.airHarvest({ gasLimit: 250000 });
             await tx.wait();
             updateData();
-            alert("AIR Harvested!");
-        } catch (e) { alert("Harvest failed!"); }
+        } catch (e) { console.error(e); }
     }
+
+    window.onload = init;
 </script>
 </body>
 </html>
