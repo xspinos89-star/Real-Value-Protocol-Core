@@ -2,63 +2,115 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>RVP Protocol Terminal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RVP Protocol | Full Terminal</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
-        body { background: #05070a; color: white; font-family: sans-serif; text-align: center; padding-top: 50px; }
-        .box { background: #161b22; border: 1px solid #30363d; padding: 30px; border-radius: 20px; display: inline-block; width: 350px; }
-        button { background: #238636; color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; cursor: pointer; font-weight: bold; }
-        .stat { margin: 20px 0; text-align: left; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
-        .val { color: #3fb950; font-weight: bold; font-size: 1.2em; }
+        :root { --primary: #58a6ff; --success: #3fb950; --danger: #f85149; --bg: #0d1117; --card: #161b22; }
+        body { background: #05070a; color: #c9d1d9; font-family: 'Inter', system-ui, sans-serif; text-align: center; padding: 20px; margin: 0; }
+        .container { background: var(--card); border: 1px solid #30363d; border-radius: 24px; padding: 30px; display: inline-block; width: 95%; max-width: 420px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); margin-top: 40px; }
+        .stat-card { background: rgba(0,0,0,0.2); border: 1px solid #30363d; padding: 16px; border-radius: 12px; margin: 12px 0; text-align: left; }
+        .label { color: #8b949e; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .value { color: #fff; font-size: 18px; font-weight: 700; margin-top: 4px; font-family: 'Roboto Mono', monospace; }
+        .progress-bg { background: #21262d; height: 6px; border-radius: 3px; margin-top: 10px; }
+        .progress-fill { background: var(--success); height: 100%; width: 0%; border-radius: 3px; transition: 1s; }
+        .btn { background: #238636; color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.2s; }
+        .btn:hover { background: #2ea043; }
+        .address-tag { font-size: 11px; color: var(--primary); background: rgba(88,166,255,0.1); padding: 4px 8px; border-radius: 6px; display: inline-block; margin-bottom: 15px; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h1>RVP Protocol</h1>
-        <div id="setup">
-            <button onclick="connect()">Connect MetaMask</button>
-        </div>
-        <div id="dash" style="display:none">
-            <div class="stat">Voting Power: <span id="vp" class="val">0</span></div>
-            <div class="stat">Assets: <span id="ai" class="val">0</span> RWA</div>
-            <button onclick="harvest()" style="background:#58a6ff">🚀 Air Harvest</button>
-        </div>
+
+<div class="container">
+    <h2 style="color:var(--primary); margin-bottom:5px;">RVP Protocol</h2>
+    <div id="addrDisplay" style="display:none" class="address-tag"></div>
+
+    <div id="setup">
+        <button class="btn" onclick="init()">Connect Protocol</button>
     </div>
 
-    <script>
-        const addr = "0x30372f69466547690623631525a4773a9856a93d";
-        const abi = [
-            "function getVotingPower(address) view returns (uint256)",
-            "function physicalInfrastructure() view returns (uint256)",
-            "function airHarvest() public"
-        ];
-        let signer, contract;
+    <div id="dash" style="display:none">
+        <div class="stat-card">
+            <div class="label">Live Voting Power</div>
+            <div id="vp" class="value">0.0000</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Physical Infrastructure (RWA)</div>
+            <div id="rwa" class="value" style="color:var(--success)">0.0000</div>
+            <div class="progress-bg"><div id="rwaBar" class="progress-fill"></div></div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Total Infra Air (Debt)</div>
+            <div id="air" class="value" style="color:var(--danger)">0.0000</div>
+        </div>
+        <button class="btn" onclick="harvest()" style="background:var(--primary)">🚀 Air Harvest</button>
+        <p id="msg" style="font-size:11px; color:#8b949e; margin-top:15px;">Synchronized with Sepolia</p>
+    </div>
+</div>
 
-        async function connect() {
-            if (window.ethereum) {
-                const provider = new ethers.BrowserProvider(window.ethereum);
-                await provider.send("eth_requestAccounts", []);
-                signer = await provider.getSigner();
-                contract = new ethers.Contract(addr, abi, signer);
-                document.getElementById('setup').style.display = 'none';
-                document.getElementById('dash').style.display = 'block';
-                update();
-            }
+<script>
+    const ADDR = "0x30372f69466547690623631525a4773a9856a93d";
+    const ABI = [
+        "function getVotingPower(address) view returns (uint256)",
+        "function physicalInfrastructure() view returns (uint256)",
+        "function totalInfraAir() view returns (uint256)",
+        "function airHarvest() public"
+    ];
+    let contract, signer;
+
+    async function init() {
+        if (!window.ethereum) return alert("Install MetaMask");
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        
+        // Network Check (Sepolia is 11155111)
+        const net = await provider.getNetwork();
+        if (net.chainId !== 11155111n) {
+            alert("Please switch MetaMask to Sepolia Network!");
+            return;
         }
 
-        async function update() {
+        await provider.send("eth_requestAccounts", []);
+        signer = await provider.getSigner();
+        contract = new ethers.Contract(ADDR, ABI, signer);
+        
+        const myAddr = await signer.getAddress();
+        document.getElementById('addrDisplay').innerText = "Wallet: " + myAddr.substring(0,6)+"..."+myAddr.substring(38);
+        document.getElementById('addrDisplay').style.display = "inline-block";
+        document.getElementById('setup').style.display = "none";
+        document.getElementById('dash').style.display = "block";
+        
+        update();
+        setInterval(update, 5000);
+    }
+
+    async function update() {
+        try {
             const user = await signer.getAddress();
-            const vRaw = await contract.getVotingPower(user);
-            const aRaw = await contract.physicalInfrastructure();
-            document.getElementById('vp').innerText = parseFloat(ethers.formatUnits(vRaw, 18)).toFixed(2);
-            document.getElementById('ai').innerText = parseFloat(ethers.formatUnits(aRaw, 18)).toFixed(4);
-        }
+            const [v, p, a] = await Promise.all([
+                contract.getVotingPower(user),
+                contract.physicalInfrastructure(),
+                contract.totalInfraAir()
+            ]);
 
-        async function harvest() {
+            document.getElementById('vp').innerText = parseFloat(ethers.formatUnits(v, 18)).toFixed(4);
+            document.getElementById('rwa').innerText = parseFloat(ethers.formatUnits(p, 18)).toFixed(6) + " RWA";
+            document.getElementById('air').innerText = parseFloat(ethers.formatUnits(a, 18)).toFixed(6) + " RVT";
+            
+            let prog = (parseFloat(ethers.formatUnits(p, 18)) / 0.1) * 100;
+            document.getElementById('rwaBar').style.width = Math.min(prog, 100) + "%";
+        } catch (e) { console.log(e); }
+    }
+
+    async function harvest() {
+        try {
+            document.getElementById('msg').innerText = "⌛ Confirm in MetaMask...";
             const tx = await contract.airHarvest();
+            document.getElementById('msg').innerText = "🚀 Transaction Sent...";
             await tx.wait();
+            document.getElementById('msg').innerText = "✅ Harvest Complete!";
             update();
-        }
-    </script>
+        } catch (e) { document.getElementById('msg').innerText = "❌ Transaction Failed"; }
+    }
+</script>
 </body>
 </html>
