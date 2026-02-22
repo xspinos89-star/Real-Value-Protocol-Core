@@ -2,94 +2,141 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <title>RVP Protocol v3.2 - FINAL REPAIR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RVP Protocol v3.5 - Advanced Terminal</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
-        body { font-family: sans-serif; background: #0d1117; color: white; text-align: center; padding: 20px; }
-        .card { background: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 15px; display: inline-block; width: 90%; max-width: 500px; }
-        .btn { background: #238636; color: white; border: none; padding: 15px 25px; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: bold; margin: 10px; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
-        .stat-box { background: #0d1117; padding: 10px; border-radius: 8px; border: 1px solid #30363d; }
-        .val { color: #58a6ff; font-weight: bold; display: block; font-size: 1.2rem; }
+        :root { --primary: #00d4ff; --secondary: #0055ff; --bg: #05070a; --card-bg: #0f172a; --text: #e2e8f0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .dashboard { width: 90%; max-width: 900px; background: var(--card-bg); border-radius: 24px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; }
+        h1 { margin: 0; font-size: 1.8rem; background: linear-gradient(45deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .stat-card { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
+        .stat-card:hover { border-color: var(--primary); transform: translateY(-5px); }
+        .label { color: #94a3b8; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+        .value { display: block; font-size: 1.5rem; font-weight: bold; margin-top: 10px; color: #fff; }
+        .btn-group { margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap; }
+        .btn { padding: 15px 30px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; transition: 0.3s; flex: 1; min-width: 150px; }
+        .btn-main { background: linear-gradient(45deg, var(--primary), var(--secondary)); color: white; box-shadow: 0 4px 15px rgba(0,212,255,0.3); }
+        .btn-main:hover { opacity: 0.9; transform: scale(1.02); }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        #status-tag { font-size: 0.8rem; padding: 5px 12px; border-radius: 20px; background: rgba(255,0,0,0.2); color: #ff4d4d; }
+        .wallet-info { font-family: monospace; font-size: 0.8rem; color: #64748b; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h1>RVP CONTROL PANEL v3.2</h1>
-    <div id="status">Status: Connected ✅</div>
-    
-    <div id="dashboard">
-        <p style="font-size: 0.8rem;">Wallet: <span id="userAddr" style="color:#8b949e"></span></p>
-        
-        <div class="stat-grid">
-            <div class="stat-box">Deposit<span id="depVal" class="val">0 ETH</span></div>
-            <div class="stat-box">VP<span id="vpVal" class="val">0</span></div>
-            <div class="stat-box">AIR<span id="airVal" class="val">0</span></div>
-            <div class="stat-box">RWA<span id="rwaVal" class="val">0</span></div>
+<div class="dashboard">
+    <div class="header">
+        <div>
+            <h1>RVP PROTOCOL <span style="font-size: 0.8rem; vertical-align: middle; opacity: 0.6;">v3.5</span></h1>
+            <div id="walletDisplay" class="wallet-info">Wallet: Not Connected</div>
+        </div>
+        <div id="status-tag">SYSTEM OFFLINE</div>
+    </div>
+
+    <div id="setupView">
+        <button class="btn btn-main" style="width: 100%;" onclick="connect()">INITIALIZE CONNECTION</button>
+    </div>
+
+    <div id="mainView" style="display: none;">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="label">Locked Deposit</span>
+                <span id="depVal" class="value">0.00 ETH</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Voting Power</span>
+                <span id="vpVal" class="value">0.00 VP</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">AIR Balance</span>
+                <span id="airVal" class="value" style="color: #00ff88;">0.000000</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">RWA Assets</span>
+                <span id="rwaVal" class="value">0 Units</span>
+            </div>
         </div>
 
-        <button class="btn" onclick="sendDeposit()">ΚΑΤΑΘΕΣΗ 0.1 ETH</button>
-        <button class="btn" onclick="updateData()" style="background:#8b949e">UPDATE DATA</button>
+        <div class="btn-group">
+            <button class="btn btn-main" onclick="deposit()">DEPOSIT 0.1 ETH</button>
+            <button class="btn btn-secondary" onclick="harvest()">HARVEST AIR</button>
+            <button class="btn btn-secondary" style="background: #334155;" onclick="updateData()">REFRESH</button>
+        </div>
     </div>
 </div>
 
 <script>
-    const CONTRACT_ADDRESS = "0xF5796E92b7722749444B6002fD4A47C10B000000";
+    const CONTRACT_ADDR = "0x99e09C98f0548Aba8803221157e653B82e345980";
     const ABI = [
         "function deposit() public payable",
+        "function airHarvest() public",
         "function getVotingPower(address _user) public view returns (uint256)",
         "function users(address) public view returns (uint256 deposit, uint256 physicalInfra, uint256 lastUpdate, uint256 accumulatedAir)",
         "function totalInfraAir(address _user) public view returns (uint256)"
     ];
 
-    let signer, contract;
+    let provider, signer, contract;
 
-    async function init() {
-        if (typeof window.ethereum !== 'undefined') {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const accounts = await provider.send("eth_requestAccounts", []);
+    async function connect() {
+        if (!window.ethereum) return alert("MetaMask not found!");
+        try {
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            provider = new ethers.providers.Web3Provider(window.ethereum);
             signer = provider.getSigner();
-            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-            document.getElementById('userAddr').innerText = accounts[0];
+            contract = new ethers.Contract(CONTRACT_ADDR, ABI, signer);
+            
+            document.getElementById('setupView').style.display = 'none';
+            document.getElementById('mainView').style.display = 'block';
+            document.getElementById('status-tag').innerText = "SYSTEM ACTIVE";
+            document.getElementById('status-tag').style.background = "rgba(0, 255, 136, 0.2)";
+            document.getElementById('status-tag').style.color = "#00ff88";
+            document.getElementById('walletDisplay').innerText = "Wallet: " + accounts[0].substring(0,6) + "..." + accounts[0].substring(38);
+            
             updateData();
-        }
+            setInterval(updateData, 15000); // Αυτόματη ανανέωση κάθε 15 δευτερόλεπτα
+        } catch (e) { alert("Connection failed!"); }
     }
 
     async function updateData() {
         try {
-            const addr = await signer.getAddress();
-            const userData = await contract.users(addr);
-            const vp = await contract.getVotingPower(addr);
-            const air = await contract.totalInfraAir(addr);
+            const user = await signer.getAddress();
+            const data = await contract.users(user);
+            const vp = await contract.getVotingPower(user);
+            const air = await contract.totalInfraAir(user);
 
-            document.getElementById('depVal').innerText = ethers.utils.formatEther(userData.deposit) + " ETH";
-            document.getElementById('vpVal').innerText = ethers.utils.formatEther(vp);
+            document.getElementById('depVal').innerText = ethers.utils.formatEther(data.deposit) + " ETH";
+            document.getElementById('vpVal').innerText = parseFloat(ethers.utils.formatEther(vp)).toFixed(2);
             document.getElementById('airVal').innerText = parseFloat(ethers.utils.formatEther(air)).toFixed(6);
-            document.getElementById('rwaVal').innerText = userData.physicalInfra.toString();
-        } catch (e) { console.error("Update failed", e); }
+            document.getElementById('rwaVal').innerText = data.physicalInfra.toString() + " Units";
+        } catch (e) { console.error("Sync error", e); }
     }
 
-    async function sendDeposit() {
+    async function deposit() {
         try {
-            document.getElementById('status').innerText = "Ανοίγει το MetaMask...";
-            // Προσθέτουμε gasLimit για να μην αποτύχει η συναλλαγή
             const tx = await contract.deposit({ 
                 value: ethers.utils.parseEther("0.1"),
                 gasLimit: 300000 
             });
-            document.getElementById('status').innerText = "Η συναλλαγή στάλθηκε! ⏳";
             await tx.wait();
-            document.getElementById('status').innerText = "Η ΚΑΤΑΘΕΣΗ ΠΕΤΥΧΕ! 🎉";
             updateData();
-        } catch (error) {
-            console.error(error);
-            alert("Σφάλμα: Βεβαιώσου ότι έχεις αρκετά Sepolia ETH και πάτησες 'Confirm' στο MetaMask.");
-            document.getElementById('status').innerText = "Αποτυχία συναλλαγής.";
+            alert("Deposit Successful!");
+        } catch (e) { 
+            console.error(e);
+            alert("Check MetaMask: Make sure you have enough Sepolia ETH and confirm the transaction!");
         }
     }
 
-    window.onload = init;
+    async function harvest() {
+        try {
+            const tx = await contract.airHarvest({ gasLimit: 200000 });
+            await tx.wait();
+            updateData();
+            alert("AIR Harvested!");
+        } catch (e) { alert("Harvest failed!"); }
+    }
 </script>
 </body>
 </html>
