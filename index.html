@@ -47,15 +47,14 @@
             </div>
 
             <button onclick="harvest()">🚀 Execute Air Harvest</button>
-            <p id="status" style="font-size: 11px; color: #8b949e; margin-top: 20px;">● System Synchronized</p>
+            <p id="status" style="font-size: 11px; color: #8b949e; margin-top: 20px;">● System Active</p>
         </div>
     </div>
 
     <script>
-        // Η σωστή διεύθυνση
-        const CONTRACT_ADDR = "0x30202fC44E18379B87A890fE846f4836474c4F80";
+        // Η ΔΙΚΗ ΣΟΥ ΣΩΣΤΗ ΔΙΕΥΘΥΝΣΗ
+        const CONTRACT_ADDR = "0x3020230F8D1C5EA188f00Ef9b0fCBA1A424c4F80";
         
-        // ΤΟ ΠΛΗΡΕΣ ABI - Αυτό έλειπε στη φωτογραφία 95
         const ABI = [
             "function getVotingPower(address) view returns (uint256)",
             "function physicalInfrastructure() view returns (uint256)",
@@ -87,30 +86,28 @@
                     contract.totalInfraAir()
                 ]);
 
-                // Μετατροπή από Wei σε νούμερα
-                const vp = ethers.formatUnits(vpRaw, 18);
-                const rwa = ethers.formatUnits(rwaRaw, 18);
-                const air = ethers.formatUnits(airRaw, 18);
+                document.getElementById('vp').innerText = parseFloat(ethers.formatUnits(vpRaw, 18)).toFixed(4);
+                document.getElementById('rwa').innerText = parseFloat(ethers.formatUnits(rwaRaw, 18)).toFixed(6) + " RWA";
+                document.getElementById('air').innerText = parseFloat(ethers.formatUnits(airRaw, 18)).toFixed(6) + " RVT";
 
-                document.getElementById('vp').innerText = parseFloat(vp).toFixed(4);
-                document.getElementById('rwa').innerText = parseFloat(rwa).toFixed(6) + " RWA";
-                document.getElementById('air').innerText = parseFloat(air).toFixed(6) + " RVT";
-
-                let progress = (parseFloat(rwa) / 0.1) * 100;
+                let progress = (parseFloat(ethers.formatUnits(rwaRaw, 18)) / 0.1) * 100;
                 document.getElementById('rwaBar').style.width = Math.min(progress, 100) + "%";
                 
-                document.getElementById('status').innerText = "● Live on Sepolia | Block: " + await signer.provider.getBlockNumber();
-            } catch (e) { console.error("Update error:", e); }
+                document.getElementById('status').innerText = "● Live on Sepolia";
+            } catch (e) { 
+                console.error(e);
+                document.getElementById('status').innerText = "⚠️ Contract Error: Check Address";
+            }
         }
 
         async function harvest() {
             try {
                 const tx = await contract.airHarvest();
-                document.getElementById('status').innerText = "⌛ Harvesting...";
+                document.getElementById('status').innerText = "⌛ Confirming...";
                 await tx.wait();
                 update();
-                document.getElementById('status').innerText = "✅ Harvest Successful!";
-            } catch (e) { alert("Transaction failed"); }
+                document.getElementById('status').innerText = "✅ Success";
+            } catch (e) { alert("Tx Failed"); }
         }
     </script>
 </body>
