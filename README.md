@@ -1,4 +1,4 @@
-# RVP Protocol (Real Value Protocol) - V10 Final
+# RVP Protocol (Real Value Protocol) - V10
 
 > **The World's First Infrastructure Realization Engine.** > Reversing the banking logic by turning speculative liquidity into tangible assets.
 
