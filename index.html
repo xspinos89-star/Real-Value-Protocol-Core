@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RVP Protocol | Infrastructure Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0d1117; color: #c9d1d9; text-align: center; padding: 50px; }
+        .container { background: #161b22; border-radius: 15px; padding: 30px; display: inline-block; border: 1px solid #30363d; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { color: #58a6ff; margin-bottom: 10px; }
+        .stat-box { margin: 20px; padding: 15px; border: 1px solid #30363d; border-radius: 10px; background: #21262d; }
+        .value { font-size: 1.5em; font-weight: bold; color: #3fb950; }
+        button { background-color: #238636; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        button:hover { background-color: #2ea043; }
+        .label { color: #8b949e; font-size: 0.9em; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>RVP Dashboard</h1>
+        <p>Debt-Inversion Engine V10</p>
+        <hr style="border: 0.5px solid #30363d;">
+        
+        <div id="connection">
+            <button onclick="connectWallet()">Connect MetaMask</button>
+        </div>
+
+        <div id="stats" style="display:none;">
+            <div class="stat-box">
+                <div class="label">Live Voting Power</div>
+                <div id="votingPower" class="value">Loading...</div>
+            </div>
+            
+            <div class="stat-box">
+                <div class="label">Physical Infrastructure</div>
+                <div id="physicalInfra" class="value" style="color: #bc8cff;">Loading...</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="label">Total Infra Air</div>
+                <div id="totalAir" class="value" style="color: #ff7b72;">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const contractAddress = "0x42c56aaa94359307f4f5ed603c802cb1a0f67691"; // Η διεύθυνσή σας
+        const abi = [
+            "function getVotingPower(address _user) view returns (uint256)",
+            "function physicalInfrastructure() view returns (uint256)",
+            "function totalInfraAir() view returns (uint256)"
+        ];
+
+        async function connectWallet() {
+            if (window.ethereum) {
+                const provider = new ethers.BrowserProvider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                const signer = await provider.getSigner();
+                const userAddress = await signer.getAddress();
+                
+                document.getElementById("connection").innerHTML = `<p style='color: #8b949e'>Connected: ${userAddress.substring(0,6)}...${userAddress.substring(38)}</p>`;
+                document.getElementById("stats").style.display = "block";
+                
+                updateStats(provider, userAddress);
+                setInterval(() => updateStats(provider, userAddress), 5000); // Ανανέωση κάθε 5 δευτερόλεπτα
+            } else {
+                alert("Please install MetaMask!");
+            }
+        }
+
+        async function updateStats(provider, userAddress) {
+            const contract = new ethers.Contract(contractAddress, abi, provider);
+            
+            try {
+                const vp = await contract.getVotingPower(userAddress);
+                const phys = await contract.physicalInfrastructure();
+                const air = await contract.totalInfraAir();
+
+                document.getElementById("votingPower").innerText = vp.toString();
+                document.getElementById("physicalInfra").innerText = ethers.formatEther(phys) + " RWA Units";
+                document.getElementById("totalAir").innerText = ethers.formatEther(air) + " RVT Air";
+            } catch (err) {
+                console.error("Error fetching data:", err);
+            }
+        }
+    </script>
+</body>
+</html>
