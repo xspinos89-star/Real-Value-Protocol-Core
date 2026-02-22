@@ -2,129 +2,92 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol v2.5 - Stable</title>
+    <title>RVP Protocol v2.7 - FINAL STABLE</title>
     <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
     <style>
-        body { font-family: sans-serif; background: #0d1117; color: white; text-align: center; padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: #161b22; padding: 20px; border-radius: 15px; border: 1px solid #30363d; }
-        .stat-card { background: #0d1117; padding: 15px; margin: 10px; border-radius: 10px; display: inline-block; width: 200px; }
-        .btn { background: #238636; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 5px; }
-        .btn:disabled { background: #30363d; cursor: not-allowed; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0d1117; color: #c9d1d9; text-align: center; padding: 40px; }
+        .box { border: 1px solid #30363d; background: #161b22; padding: 40px; display: inline-block; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-width: 500px; width: 90%; }
+        h1 { color: #58a6ff; margin-bottom: 10px; }
+        .btn { background: #238636; color: white; border: none; padding: 15px 30px; font-weight: bold; cursor: pointer; font-size: 1.1rem; border-radius: 6px; transition: 0.2s; margin-top: 20px; width: 100%; }
+        .btn:hover { background: #2ea043; }
         .btn-connect { background: #1f6feb; }
-        #status { color: #8b949e; margin: 15px; font-family: monospace; }
-        .value { color: #58a6ff; font-size: 1.2rem; font-weight: bold; display: block; }
+        .btn-connect:hover { background: #388bfd; }
+        #data { display: none; margin-top: 30px; text-align: left; }
+        .stat { background: #0d1117; padding: 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #30363d; display: flex; justify-content: space-between; }
+        .label { color: #8b949e; }
+        .value { color: #58a6ff; font-weight: bold; }
+        #status { color: #8b949e; margin-bottom: 20px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>RVP Dashboard v2.5</h1>
-    <div id="status">Status: Checking for MetaMask...</div>
-    <button id="connectBtn" class="btn btn-connect" onclick="connect()">Connect Wallet</button>
+<div class="box">
+    <h1>RVP TERMINAL v2.7</h1>
+    <p style="color: #8b949e; margin-top: 0;">New Contract Deployed</p>
+    <div id="status">Ready to connect...</div>
+    
+    <button id="connectBtn" class="btn btn-connect" onclick="forceConnect()">🦊 CONNECT METAMASK</button>
 
-    <div id="dashboard" style="display:none;">
-        <div class="stat-card">
-            Deposit: <span id="depositVal" class="value">0 ETH</span>
+    <div id="data">
+        <div class="stat">
+            <span class="label">My Deposit:</span>
+            <span id="dep" class="value">0</span> <span class="value">ETH</span>
         </div>
-        <div class="stat-card">
-            Voting Power: <span id="vpVal" class="value">0 VP</span>
+        <div class="stat">
+            <span class="label">Voting Power:</span>
+            <span id="vp" class="value">0</span> <span class="value">VP</span>
         </div>
-        <div class="stat-card">
-            AIR: <span id="airVal" class="value">0 AIR</span>
+        <div class="stat">
+            <span class="label">Current AIR:</span>
+            <span id="air" class="value">0</span> <span class="value">AIR</span>
         </div>
-        <div class="stat-card">
-            RWA: <span id="rwaVal" class="value">0 RWA</span>
-        </div>
-
-        <div style="margin-top:20px;">
-            <button class="btn" onclick="executeTransaction('deposit')">Deposit 0.1 ETH</button>
-            <button class="btn" onclick="executeTransaction('harvest')" style="background:#8957e5">Harvest AIR</button>
-        </div>
+        
+        <button class="btn" onclick="doDeposit()">DEPOSIT 0.1 ETH</button>
+        <button class="btn" style="background: #8957e5;" onclick="doHarvest()">HARVEST AIR</button>
     </div>
 </div>
 
 <script>
-    const contractAddress = "0xF5796E92b7722749444B6002fD4A47C10B000000";
+    // ΝΕΑ ΔΙΕΥΘΥΝΣΗ ΣΥΜΒΟΛΑΙΟΥ
+    const addr = "0x99e09C98f0548Aba8803221157e653B82e345980"; 
+    
     const abi = [
         "function deposit() public payable",
         "function airHarvest() public",
         "function getVotingPower(address _user) public view returns (uint256)",
         "function users(address) public view returns (uint256 deposit, uint256 physicalInfra, uint256 lastUpdate, uint256 accumulatedAir)",
-        "function totalInfraAir(address _user) public view returns (uint256)",
-        "function physicalInfrastructure(address _user) public view returns (uint256)"
+        "function totalInfraAir(address _user) public view returns (uint256)"
     ];
 
     let provider, signer, contract;
 
-    async function init() {
-        if (window.ethereum) {
+    async function forceConnect() {
+        if (!window.ethereum) return alert("MetaMask is not installed!");
+        
+        try {
+            document.getElementById('status').innerText = "Requesting permission...";
+            
+            // Force account selection window
+            await window.ethereum.request({ 
+                method: 'wallet_requestPermissions', 
+                params: [{ eth_accounts: {} }] 
+            });
+            
             provider = new ethers.providers.Web3Provider(window.ethereum);
-            const accounts = await provider.listAccounts();
-            if (accounts.length > 0) {
-                setupConnection(accounts[0]);
-            } else {
-                document.getElementById('status').innerText = "Wallet detected. Please click Connect.";
-            }
-        } else {
-            document.getElementById('status').innerText = "Please install MetaMask.";
-        }
-    }
-
-    async function connect() {
-        try {
-            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-            setupConnection(accounts[0]);
+            signer = provider.getSigner();
+            contract = new ethers.Contract(addr, abi, signer);
+            
+            const user = await signer.getAddress();
+            document.getElementById('status').innerText = "Connected: " + user.substring(0,6) + "..." + user.substring(38);
+            document.getElementById('connectBtn').style.display = "none";
+            document.getElementById('data').style.display = "block";
+            
+            update();
+            setInterval(update, 5000); // Auto update every 5 seconds
         } catch (err) {
+            document.getElementById('status').innerText = "Connection failed.";
             console.error(err);
-            alert("Connection failed.");
         }
     }
 
-    async function setupConnection(address) {
-        signer = provider.getSigner();
-        contract = new ethers.Contract(contractAddress, abi, signer);
-        document.getElementById('status').innerText = "Connected: " + address;
-        document.getElementById('connectBtn').style.display = "none";
-        document.getElementById('dashboard').style.display = "block";
-        updateData();
-        setInterval(updateData, 10000);
-    }
-
-    async function updateData() {
-        try {
-            const userAddr = await signer.getAddress();
-            const userData = await contract.users(userAddr);
-            const vp = await contract.getVotingPower(userAddr);
-            const air = await contract.totalInfraAir(userAddr);
-            const rwa = await contract.physicalInfrastructure(userAddr);
-
-            document.getElementById('depositVal').innerText = ethers.utils.formatEther(userData.deposit) + " ETH";
-            document.getElementById('vpVal').innerText = parseFloat(ethers.utils.formatEther(vp)).toFixed(4);
-            document.getElementById('airVal').innerText = parseFloat(ethers.utils.formatEther(air)).toFixed(4);
-            document.getElementById('rwaVal').innerText = parseFloat(ethers.utils.formatEther(rwa)).toFixed(4);
-        } catch (e) { console.log("Update error", e); }
-    }
-
-    async function executeTransaction(type) {
-        try {
-            let tx;
-            if (type === 'deposit') {
-                tx = await contract.deposit({ value: ethers.utils.parseEther("0.1") });
-            } else {
-                tx = await contract.airHarvest();
-            }
-            document.getElementById('status').innerText = "Transaction pending...";
-            await tx.wait();
-            document.getElementById('status').innerText = "Transaction Success!";
-            updateData();
-        } catch (err) {
-            console.error(err);
-            alert("Transaction failed. Check console.");
-        }
-    }
-
-    window.onload = init;
-</script>
-</body>
-</html>
+    async function
