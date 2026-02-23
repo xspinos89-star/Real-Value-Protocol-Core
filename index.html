@@ -83,7 +83,7 @@
 </div>
 
 <script>
-    let marketInf = 0.0842; 
+    let marketInf = 0.0825; 
     setInterval(() => {
         marketInf = parseFloat((0.08 + (Math.random() * 0.02)).toFixed(4));
     }, 5000);
@@ -144,23 +144,24 @@
             let loyaltyBonus = 1 + (timeDiff * 0.0000001); 
             let currentVP = parseFloat(ethers.formatEther(vpFromContract)) * loyaltyBonus;
 
-            // --- DEFLATIONARY FEEDBACK LOGIC ---
-            // 1. Οι υποδομές (RWA) καταπολεμούν τον πληθωρισμό.
-            // Παράδειγμα: Κάθε 1 Unit υποδομής μειώνει τον πληθωρισμό κατά 0.2% (0.002).
+            // --- FIXED DEBT & DEFLATIONARY FEEDBACK ---
+            // 1. Fixed Debt: Το 10% του κεφαλαίου είναι η βάση του αέρα.
+            let fixedDebt = depositVal * 0.10;
+
+            // 2. Inflation Impact: Ο παγκόσμιος αντίκτυπος μειώνει τον ρυθμό αέρα.
             let inflationMitigation = globalRwaVal * 0.002; 
             let effectiveInflation = Math.max(0, marketInf - inflationMitigation);
 
-            // 2. Ροή: Ο αέρας παράγεται πλέον με βάση τον "καταπολεμημένο" πληθωρισμό.
+            // 3. Dynamic Air (Flow): Προστίθεται στον χρόνο χωρίς να μειώνεται ποτέ.
             let inflationRatePerSec = (depositVal * effectiveInflation) / (365 * 24 * 3600);
-            let inflationAir = inflationRatePerSec * timeDiff;
+            let flowAir = inflationRatePerSec * timeDiff;
 
-            // 3. Σύνολο: Πληθωρισμός + Στατικό 10% (Stock) που υπάρχει ήδη στο συμβόλαιο.
-            let liveAir = inflationAir + parseFloat(ethers.formatEther(userData.accumulatedAir));
+            // 4. ΣΥΝΟΛΟ: Στατικό Χρέος + Ροή Πληθωρισμού + Αέρας από προηγούμενα harvests (accumulatedAir)
+            let liveAir = fixedDebt + flowAir + parseFloat(ethers.formatEther(userData.accumulatedAir));
 
-            // 4. Saturation: Σχέση αέρα προς το 10% του κεφαλαίου.
+            // Saturation: Σχέση αέρα προς το 10% του κεφαλαίου (Threshold)
             let userSaturation = depositVal > 0 ? (liveAir / (depositVal * 0.10)) * 100 : 0;
 
-            // Penalty & Efficiency
             let efficiency = 100;
             if (userSaturation > 100) {
                 efficiency = Math.max(0, 100 - (userSaturation - 100) * 2); 
