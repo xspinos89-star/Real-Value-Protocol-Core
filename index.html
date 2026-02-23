@@ -3,119 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Master Architect</title>
+    <title>RVP Protocol | Sovereign Infrastructure</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
-        :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --text: #f8fafc; --accent: #f59e0b; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 20px; display: flex; justify-content: center; }
-        .dashboard { width: 100%; max-width: 1000px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 20px; }
-        .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #1e293b; }
-        .label { color: #94a3b8; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; }
-        .value { font-size: 1.5rem; font-weight: bold; margin-top: 5px; font-family: monospace; }
-        .btn { width: 100%; padding: 15px; margin-top: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
-        .btn-dep { background: var(--secondary); color: white; }
-        .btn-harv { background: var(--primary); color: white; }
-        .btn:hover { opacity: 0.8; transform: translateY(-2px); }
-        .status { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; font-size: 0.8rem; margin-top: 15px; text-align: center; border: 1px dashed #334155; }
+        :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .dashboard { width: 100%; max-width: 1100px; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #1e293b; margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+        .card { background: var(--card); padding: 25px; border-radius: 16px; border: 1px solid #1e293b; position: relative; }
+        .label { color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .value { font-size: 1.6rem; font-weight: 700; margin: 10px 0; font-family: 'Courier New', monospace; }
+        .bar-container { width: 100%; background: #1e293b; height: 12px; border-radius: 6px; margin: 10px 0; overflow: hidden; }
+        #efficiencyBar { height: 100%; width: 100%; background: linear-gradient(90deg, var(--danger), var(--primary)); transition: 0.5s; }
+        .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
+        .btn-main { padding: 18px; border-radius: 12px; border: none; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
+        .btn-deposit { background: var(--secondary); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2); }
+        .btn-harvest { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); }
+        .btn-main:hover { filter: brightness(1.2); transform: translateY(-2px); }
+        .impact-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; text-align: center; }
+        .status-box { font-size: 0.85rem; font-weight: 600; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.03); margin-top: 5px; }
+        #connectBtn { padding: 12px 24px; background: var(--secondary); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; }
     </style>
 </head>
 <body>
 
 <div class="dashboard">
-    <h2 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v10.6</span></h2>
-    <div id="walletAddr" style="font-size: 0.7rem; color: var(--secondary); margin-bottom: 20px;">Παρακαλώ συνδέστε το Πορτοφόλι σας</div>
-    
-    <button id="connBtn" class="btn btn-dep" onclick="connect()">ΣΥΝΔΕΣΗ METAMASK</button>
+    <header>
+        <div>
+            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v10.7</span></h1>
+            <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">Waiting for Architect Connection...</div>
+        </div>
+        <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+    </header>
 
     <div id="mainUI" style="display:none;">
         <div class="grid">
-            <div class="card"><div class="label">Safe Capital</div><div id="safeCap" class="value">0.0000 ETH</div></div>
-            <div class="card"><div class="label">Captured Air</div><div id="airVal" class="value" style="color:var(--accent)">0.00000000 ETH</div></div>
-            <div class="card"><div class="label">Solidified Assets</div><div id="rwaVal" class="value" style="color:var(--primary)">0.0000</div></div>
-            <div class="card"><div class="label">Loyalty Factor</div><div id="loyalty" class="value">x1.0000</div></div>
+            <div class="card">
+                <div class="label">Safe Capital (Collateral)</div>
+                <div id="safeCap" class="value">0.0000 ETH</div>
+                <div style="font-size:0.7rem; color:var(--primary)">Anti-Inflation Shield Active</div>
+            </div>
+            <div class="card">
+                <div class="label">Sovereign Voting Power</div>
+                <div id="vpVal" class="value">0.0000</div>
+                <div id="loyaltyStatus" style="font-size:0.7rem; color:var(--secondary)">Loyalty Engine Active</div>
+            </div>
+            <div class="card">
+                <div class="label">Captured Market Air</div>
+                <div id="airVal" class="value" style="color:var(--accent)">0.00000000 ETH</div>
+                <div style="font-size:0.7rem;">Market Saturation: 0.00%</div>
+            </div>
+            <div class="card">
+                <div class="label">RWA Solidified Assets</div>
+                <div id="rwaVal" class="value" style="color:var(--primary)">0.0000</div>
+                <div style="font-size:0.7rem;">Verified Real-World Infrastructure</div>
+            </div>
+            <div class="card" style="grid-column: span 2;">
+                <div class="label">Solidification Efficiency</div>
+                <div class="bar-container"><div id="efficiencyBar"></div></div>
+                <div id="statusMsg" class="status-box">ORACLE SYNCED | Market Inflation: 7.20%</div>
+            </div>
         </div>
 
-        <div class="status" id="statusBox">ΣΥΣΤΗΜΑ ΕΤΟΙΜΟ</div>
+        <div class="button-group">
+            <button class="btn-main btn-deposit" onclick="deposit()">Deposit Safe Capital</button>
+            <button class="btn-main btn-harvest" onclick="harvest()">Execute Solidification</button>
+        </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
-            <button class="btn btn-dep" onclick="deposit()">ΚΑΤΑΘΕΣΗ ETH</button>
-            <button class="btn btn-harv" onclick="harvest()">HARVEST RWA</button>
+        <div style="margin-top:40px; background: rgba(59, 130, 246, 0.05); padding: 30px; border-radius: 20px; border: 1px solid #1e293b;">
+            <h2 style="text-align:center; color:var(--secondary); margin-top:0; font-size: 1.1rem;">MACRO-ECONOMIC IMPACT ANALYSIS</h2>
+            <div class="impact-stats">
+                <div><div class="label">Total Debt Neutralized</div><div id="globalAir" class="value" style="font-size:1.3rem;">0.00 ETH</div></div>
+                <div><div class="label">Global RWA Infrastructure</div><div id="globalRwa" class="value" style="font-size:1.3rem;">0.00 Units</div></div>
+                <div><div class="label">Net Inflation Impact</div><div id="inflationRed" class="value" style="font-size:1.3rem; color:var(--primary)">-0.00%</div></div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    const CONTRACT_ADDRESS = "0x99e09C98f0548Aba8803221157e653B82e345980";
     const ABI = [
         {"inputs":[],"name":"airHarvest","outputs":[],"stateMutability":"nonpayable","type":"function"},
         {"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"getVotingPower","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-        {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"users","outputs":[{"internalType":"uint256","name":"deposit","type":"uint256"},{"internalType":"uint256","name":"physicalInfra","type":"uint256"},{"internalType":"uint256","name":"lastUpdate","type":"uint256"},{"internalType":"uint256","name":"accumulatedAir","type":"uint256"}],"stateMutability":"view","type":"function"}
+        {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"users","outputs":[{"internalType":"uint256","name":"deposit","type":"uint256"},{"internalType":"uint256","name":"physicalInfra","type":"uint256"},{"internalType":"uint256","name":"lastUpdate","type":"uint256"},{"internalType":"uint256","name":"accumulatedAir","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"totalGlobalAir","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"totalGlobalRWA","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
     ];
-
+    const CONTRACT_ADDRESS = "0x99e09C98f0548Aba8803221157e653B82e345980";
     let provider, signer, contract;
 
-    async function connect() {
-        if (!window.ethereum) return alert("MetaMask required!");
-        provider = new ethers.BrowserProvider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = await provider.getSigner();
-        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-        
-        document.getElementById('connBtn').style.display = "none";
-        document.getElementById('mainUI').style.display = "block";
-        const addr = await signer.getAddress();
-        document.getElementById('walletAddr').innerText = "ARCHITECT: " + addr;
-        
-        updateData(addr);
-        setInterval(() => updateData(addr), 3000);
+    async function connectWallet() {
+        if (window.ethereum) {
+            provider = new ethers.BrowserProvider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            signer = await provider.getSigner();
+            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+            const addr = await signer.getAddress();
+            document.getElementById('connectBtn').style.display = "none";
+            document.getElementById('mainUI').style.display = "block";
+            document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + addr;
+            loadData(addr);
+            setInterval(() => loadData(addr), 3000);
+        }
     }
 
     async function deposit() {
         try {
-            const val = prompt("Ποσό σε ETH:", "0.05");
-            if (!val) return;
-
-            document.getElementById('statusBox').innerText = "ΑΠΟΣΤΟΛΗ ΣΤΟ BLOCKCHAIN...";
+            const amount = prompt("Εισάγετε το ποσό ETH για κατάθεση:", "0.1");
+            if (!amount || isNaN(amount)) return;
             
-            // Η πιο σταθερή μέθοδος αποστολής για να μην κάνει revert
+            document.getElementById('statusMsg').innerText = "WAITING FOR BLOCKCHAIN...";
             const tx = await signer.sendTransaction({
                 to: CONTRACT_ADDRESS,
-                value: ethers.parseEther(val),
-                gasLimit: 250000 // Πολύ πάνω από το όριο για σιγουριά
+                value: ethers.parseEther(amount),
+                gasLimit: 150000
             });
-
             await tx.wait();
-            alert("ΕΠΙΤΥΧΙΑ!");
-        } catch (e) {
-            console.error(e);
-            alert("Σφάλμα: Η συναλλαγή απορρίφθηκε. Δοκιμάστε μικρότερο ποσό ή ελέγξτε το Remix.");
-        }
+            alert("Success!");
+        } catch (e) { alert("Deposit failed."); }
     }
 
-    async function updateData(addr) {
+    async function loadData(userAddr) {
         try {
-            const data = await contract.users(addr);
-            const vp = await contract.getVotingPower(addr);
-            
-            const dep = parseFloat(ethers.formatEther(data.deposit));
+            const userData = await contract.users(userAddr);
+            const gAir = await contract.totalGlobalAir();
+            const gRwa = await contract.totalGlobalRWA();
+            const vpRaw = await contract.getVotingPower(userAddr);
+
+            const dep = parseFloat(ethers.formatEther(userData.deposit));
             const now = Math.floor(Date.now() / 1000);
-            const diff = now - Number(data.lastUpdate);
-            
-            let air = (dep * 0.172 / 31536000 * diff) + parseFloat(ethers.formatEther(data.accumulatedAir));
+            const diff = now - Number(userData.lastUpdate);
+
             let loyalty = 1 + (diff * 0.0000001);
+            let air = (dep * 0.172 / 31536000 * diff) + parseFloat(ethers.formatEther(userData.accumulatedAir));
 
             document.getElementById('safeCap').innerText = dep.toFixed(4) + " ETH";
+            document.getElementById('vpVal').innerText = (parseFloat(ethers.formatEther(vpRaw)) * loyalty).toFixed(4);
             document.getElementById('airVal').innerText = air.toFixed(8) + " ETH";
-            document.getElementById('rwaVal').innerText = parseFloat(ethers.formatEther(data.physicalInfra)).toFixed(4);
-            document.getElementById('loyalty').innerText = "x" + loyalty.toFixed(6);
-            document.getElementById('statusBox').innerText = "ORACLE SYNCED | MARKET INFLATION: 7.20%";
+            document.getElementById('rwaVal').innerText = parseFloat(ethers.formatEther(userData.physicalInfra)).toFixed(4);
+            document.getElementById('loyaltyStatus').innerText = "Loyalty Multiplier: x" + loyalty.toFixed(6);
+            document.getElementById('globalAir').innerText = parseFloat(ethers.formatEther(gAir)).toFixed(2) + " ETH";
+            document.getElementById('globalRwa').innerText = parseFloat(ethers.formatEther(gRwa)).toFixed(2) + " Units";
+            document.getElementById('inflationRed').innerText = "-" + (parseFloat(ethers.formatEther(gRwa)) * 0.00001).toFixed(6) + "%";
         } catch (e) { console.log(e); }
     }
 
     async function harvest() {
         try {
-            const tx = await contract.airHarvest({ gasLimit: 300000 });
+            const tx = await contract.airHarvest({ gasLimit: 250000 });
             await tx.wait();
             alert("Harvest Success!");
         } catch (e) { alert("Harvest failed."); }
