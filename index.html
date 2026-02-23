@@ -145,27 +145,29 @@
             let loyaltyBonus = 1 + (timeDiff * 0.0000001); 
             let currentVP = parseFloat(ethers.formatEther(vpFromContract)) * loyaltyBonus;
 
-            // ΛΟΓΙΚΗ: 10% Structural Debt + Live Market Inflation
-            let totalRate = 0.10 + marketInf; 
-            let baseAirRate = (depositVal * totalRate / (365 * 24 * 3600)); 
-            let liveAir = (baseAirRate * timeDiff) + parseFloat(ethers.formatEther(userData.accumulatedAir));
+            // --- REALISTIC ECONOMY LOGIC ---
+            // 1. Ο αέρας αυξάνεται συνεχώς ΜΟΝΟ με τον πληθωρισμό της αγοράς (Flow)
+            let inflationRatePerSec = (depositVal * marketInf) / (365 * 24 * 3600);
+            let inflationAir = inflationRatePerSec * timeDiff;
 
-            // ΔΙΟΡΘΩΣΗ SATURATION: Πόσο αέρα έχεις εσύ σε σχέση με το 5% του Capital σου
+            // 2. Ο συνολικός αέρας είναι ο πληθωρισμός + το στατικό χρέος 10% που υπάρχει στο συμβόλαιο (Stock)
+            let liveAir = inflationAir + parseFloat(ethers.formatEther(userData.accumulatedAir));
+
+            // 3. SATURATION: Ορίζουμε ως όριο το 10% του Capital (Το κλασικό τραπεζικό όριο)
             let userSaturation = 0;
             if (depositVal > 0) {
-                userSaturation = (liveAir / (depositVal * 0.05)) * 100;
+                userSaturation = (liveAir / (depositVal * 0.10)) * 100;
             }
 
             // PENALTY & EFFICIENCY
             let efficiency = 100;
             if (userSaturation > 100) {
-                // Όσο ανεβαίνει το saturation πάνω από 100%, πέφτει το efficiency
                 efficiency = Math.max(0, 100 - (userSaturation - 100) * 2); 
-                currentVP = currentVP * (efficiency / 100); // Μείωση Voting Power
-                document.getElementById('statusMsg').innerText = "INFLATION OVERFLOW: SOLIDIFICATION REQUIRED";
+                currentVP = currentVP * (efficiency / 100); 
+                document.getElementById('statusMsg').innerText = "INFLATION ATTACK: SOLIDIFY IMMEDIATELY";
                 document.getElementById('statusMsg').style.color = "var(--danger)";
             } else {
-                document.getElementById('statusMsg').innerText = `ORACLE SYNCED | Structural Debt: 10.00% | Market Inflation: ${(marketInf*100).toFixed(2)}%`;
+                document.getElementById('statusMsg').innerText = `ORACLE SYNCED | Structural Debt: 10% (Fixed) | Market Inflation: ${(marketInf*100).toFixed(2)}% (Live)`;
                 document.getElementById('statusMsg').style.color = "var(--primary)";
             }
 
@@ -188,7 +190,7 @@
         try {
             const tx = await contract.airHarvest();
             await tx.wait();
-            alert("SUCCESSFUL SOLIDIFICATION.");
+            alert("SOLIDIFICATION SUCCESSFUL.");
         } catch (e) { alert("Harvest failed."); }
     }
 </script>
