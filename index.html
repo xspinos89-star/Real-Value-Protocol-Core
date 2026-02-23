@@ -136,8 +136,7 @@
             const vpFromContract = await contract.getVotingPower(userAddr);
 
             const depositVal = parseFloat(ethers.formatEther(userData.deposit));
-            const globalRwa = parseFloat(ethers.formatEther(gRwa));
-            const globalAir = parseFloat(ethers.formatEther(gAir));
+            const globalRwaVal = parseFloat(ethers.formatEther(gRwa));
             const lastUpdate = Number(userData.lastUpdate);
             const now = Math.floor(Date.now() / 1000);
             const timeDiff = lastUpdate > 0 ? now - lastUpdate : 0;
@@ -145,21 +144,23 @@
             let loyaltyBonus = 1 + (timeDiff * 0.0000001); 
             let currentVP = parseFloat(ethers.formatEther(vpFromContract)) * loyaltyBonus;
 
-            // --- REALISTIC ECONOMY LOGIC ---
-            // 1. Ο αέρας αυξάνεται συνεχώς ΜΟΝΟ με τον πληθωρισμό της αγοράς (Flow)
-            let inflationRatePerSec = (depositVal * marketInf) / (365 * 24 * 3600);
+            // --- DEFLATIONARY FEEDBACK LOGIC ---
+            // 1. Οι υποδομές (RWA) καταπολεμούν τον πληθωρισμό.
+            // Παράδειγμα: Κάθε 1 Unit υποδομής μειώνει τον πληθωρισμό κατά 0.2% (0.002).
+            let inflationMitigation = globalRwaVal * 0.002; 
+            let effectiveInflation = Math.max(0, marketInf - inflationMitigation);
+
+            // 2. Ροή: Ο αέρας παράγεται πλέον με βάση τον "καταπολεμημένο" πληθωρισμό.
+            let inflationRatePerSec = (depositVal * effectiveInflation) / (365 * 24 * 3600);
             let inflationAir = inflationRatePerSec * timeDiff;
 
-            // 2. Ο συνολικός αέρας είναι ο πληθωρισμός + το στατικό χρέος 10% που υπάρχει στο συμβόλαιο (Stock)
+            // 3. Σύνολο: Πληθωρισμός + Στατικό 10% (Stock) που υπάρχει ήδη στο συμβόλαιο.
             let liveAir = inflationAir + parseFloat(ethers.formatEther(userData.accumulatedAir));
 
-            // 3. SATURATION: Ορίζουμε ως όριο το 10% του Capital (Το κλασικό τραπεζικό όριο)
-            let userSaturation = 0;
-            if (depositVal > 0) {
-                userSaturation = (liveAir / (depositVal * 0.10)) * 100;
-            }
+            // 4. Saturation: Σχέση αέρα προς το 10% του κεφαλαίου.
+            let userSaturation = depositVal > 0 ? (liveAir / (depositVal * 0.10)) * 100 : 0;
 
-            // PENALTY & EFFICIENCY
+            // Penalty & Efficiency
             let efficiency = 100;
             if (userSaturation > 100) {
                 efficiency = Math.max(0, 100 - (userSaturation - 100) * 2); 
@@ -167,7 +168,7 @@
                 document.getElementById('statusMsg').innerText = "INFLATION ATTACK: SOLIDIFY IMMEDIATELY";
                 document.getElementById('statusMsg').style.color = "var(--danger)";
             } else {
-                document.getElementById('statusMsg').innerText = `ORACLE SYNCED | Structural Debt: 10% (Fixed) | Market Inflation: ${(marketInf*100).toFixed(2)}% (Live)`;
+                document.getElementById('statusMsg').innerText = `ORACLE: ${(marketInf*100).toFixed(2)}% | RVP IMPACT: -${(inflationMitigation*100).toFixed(2)}% | EFFECTIVE: ${(effectiveInflation*100).toFixed(2)}%`;
                 document.getElementById('statusMsg').style.color = "var(--primary)";
             }
 
@@ -176,13 +177,13 @@
             document.getElementById('vpVal').innerText = currentVP.toFixed(6);
             document.getElementById('airVal').innerText = liveAir.toFixed(10);
             document.getElementById('rwaVal').innerText = parseFloat(ethers.formatEther(userData.physicalInfra)).toFixed(4);
-            document.getElementById('difficultyMsg').innerText = `Saturation Level: ${userSaturation.toFixed(2)}%`;
+            document.getElementById('difficultyMsg').innerText = `Saturation: ${userSaturation.toFixed(2)}% | Net Impact: -${(inflationMitigation*100).toFixed(2)}%`;
             document.getElementById('efficiencyBar').style.width = efficiency + "%";
             document.getElementById('loyaltyStatus').innerText = `Loyalty Multiplier: x${loyaltyBonus.toFixed(6)}`;
             
-            document.getElementById('globalAir').innerText = globalAir.toFixed(2) + " ETH";
-            document.getElementById('globalRwa').innerText = globalRwa.toFixed(2) + " Units";
-            document.getElementById('inflationRed').innerText = "-" + (globalRwa * 0.00001).toFixed(6) + "%";
+            document.getElementById('globalAir').innerText = parseFloat(ethers.formatEther(gAir)).toFixed(2) + " ETH";
+            document.getElementById('globalRwa').innerText = globalRwaVal.toFixed(2) + " Units";
+            document.getElementById('inflationRed').innerText = "-" + (inflationMitigation * 100).toFixed(4) + "%";
         } catch (e) { console.error(e); }
     }
 
