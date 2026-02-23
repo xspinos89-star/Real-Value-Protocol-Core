@@ -3,189 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol v10.2 | Dashboard</title>
+    <title>RVP Protocol | Global Asset Solidification</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --bg: #050b18; 
-            --card-bg: rgba(15, 23, 42, 0.9); 
-            --primary-blue: #3b82f6; 
-            --neon-green: #00ff88; 
-            --border-blue: #1e3a8a; 
-        }
-
-        body { 
-            background-color: var(--bg); 
-            color: #ffffff; 
-            font-family: 'Rajdhani', sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding: 0 10px;
-        }
-
-        .logo { font-family: 'Orbitron'; font-size: 26px; font-weight: bold; }
-        .architect { font-family: 'Orbitron'; font-size: 11px; color: var(--primary-blue); }
-
-        /* Dashboard Grid */
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border: 2px solid var(--border-blue); /* Το έντονο μπλε περίγραμμα της φωτό */
-            padding: 18px;
-            border-radius: 4px;
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
-        }
-
-        .label { 
-            font-family: 'Orbitron'; 
-            color: #94a3b8; 
-            font-size: 0.65rem; 
-            text-transform: uppercase; 
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-        }
-
-        .value { 
-            font-family: 'Orbitron'; 
-            font-size: 1.5rem; 
-            font-weight: 700; 
-            margin-bottom: 8px; 
-        }
-
-        .sub-value { font-size: 0.75rem; color: var(--primary-blue); }
-
-        /* Efficiency Section */
-        .efficiency-panel {
-            background: var(--card-bg);
-            border: 2px solid var(--border-blue);
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-        }
-
-        .bar-container { 
-            width: 100%; 
-            background: #0a1428; 
-            height: 12px; 
-            border: 1px solid var(--border-blue);
-            border-radius: 2px; 
-            margin: 15px 0; 
-            overflow: hidden; 
-        }
-
-        #efficiencyBar { 
-            height: 100%; 
-            width: 78%; /* Αρχική τιμή όπως στη φωτό */
-            background: var(--primary-blue); 
-            box-shadow: 0 0 15px var(--primary-blue);
-            transition: 0.5s; 
-        }
-        
-        .status-text { font-family: 'Orbitron'; font-size: 10px; color: var(--primary-blue); }
-
-        /* Buttons */
-        .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
-        .btn-action { 
-            padding: 18px; 
-            background: #0f172a;
-            border: 2px solid var(--primary-blue); 
-            color: white;
-            font-family: 'Orbitron';
-            font-weight: 700; 
-            font-size: 0.85rem; 
-            cursor: pointer; 
-            text-transform: uppercase;
-            transition: 0.3s; 
-        }
-
-        .btn-action:hover { background: var(--border-blue); box-shadow: 0 0 15px var(--primary-blue); }
-        
-        /* Macro Impact - Το κάτω μέρος */
-        .impact-analysis {
-            margin-top: 40px;
-            padding-top: 25px;
-            border-top: 1px solid var(--border-blue);
-            text-align: center;
-        }
-
-        .impact-title { font-family: 'Orbitron'; font-size: 0.8rem; color: #64748b; letter-spacing: 3px; margin-bottom: 25px; }
-
-        .impact-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-
-        #connectBtn { 
-            padding: 10px 20px; 
-            background: transparent; 
-            border: 1px solid var(--primary-blue); 
-            color: var(--primary-blue); 
-            font-family: 'Orbitron'; 
-            cursor: pointer; 
-        }
+        :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .dashboard { width: 100%; max-width: 1100px; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #1e293b; margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #1e293b; position: relative; overflow: hidden; }
+        .label { color: #94a3b8; font-size: 0.875rem; margin-bottom: 8px; }
+        .value { font-size: 1.75rem; font-weight: 700; margin-bottom: 4px; }
+        .sub-value { font-size: 0.813rem; color: var(--secondary); }
+        .efficiency-panel { margin-top: 30px; background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid #1e293b; }
+        .bar-bg { width: 100%; background: #1e293b; height: 8px; border-radius: 4px; margin: 15px 0; }
+        #efficiencyBar { height: 100%; width: 0%; background: var(--secondary); border-radius: 4px; transition: width 0.5s; box-shadow: 0 0 10px var(--secondary); }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .btn { padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-primary { background: var(--secondary); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--secondary); color: var(--secondary); }
+        .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .impact-section { margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 30px; }
+        .impact-title { font-size: 0.75rem; font-weight: 700; color: #64748b; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 25px; text-align: center; }
+        #statusMsg { font-size: 0.75rem; margin-top: 10px; color: #64748b; font-family: monospace; }
+        #connectBtn { background: var(--primary); color: white; padding: 10px 20px; border-radius: 6px; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <div>
-        <div class="logo">RVP Protocol <span style="color:var(--primary-blue)">v10.2</span></div>
-        <div id="userWallet" class="architect">ARCHITECT ACTIVE: 0x... (WAITING)</div>
-    </div>
-    <button id="connectBtn" onclick="connectWallet()">CONNECT WALLET</button>
-</div>
+<div class="dashboard">
+    <header>
+        <div>
+            <h1 style="font-size: 1.5rem; margin: 0;">RVP Protocol <span style="color:var(--secondary)">v10.2</span></h1>
+            <p id="userWallet" style="font-size: 0.75rem; color: #64748b; margin: 5px 0 0 0;">ARCHITECT ACTIVE: CONNECT WALLET</p>
+        </div>
+        <button id="connectBtn" onclick="connectWallet()">CONNECT ARBITRUM</button>
+    </header>
 
-<div class="grid-container">
-    <div class="card">
-        <div class="label">Safe Capital (Collateral)</div>
-        <div id="safeCap" class="value">0.2000</div>
-        <div class="sub-value">Shield Integrity: Stable</div>
+    <div class="grid">
+        <div class="card">
+            <div class="label">Safe Capital (Collateral)</div>
+            <div id="safeCap" class="value">0.0000</div>
+            <div class="sub-value">Shield Integrity: Stable</div>
+        </div>
+        <div class="card">
+            <div class="label">Sovereign Voting Power</div>
+            <div id="vpVal" class="value">0.0000</div>
+            <div id="loyaltyStatus" class="sub-value">Loyalty Multiplier: x1.000000</div>
+        </div>
+        <div class="card">
+            <div class="label">Captured Market Air</div>
+            <div id="airVal" class="value" style="color:var(--accent)">0.00000000</div>
+            <div id="difficultyMsg" class="sub-value">Saturation Level: 0.00%</div>
+        </div>
+        <div class="card">
+            <div class="label">RWA Solidified Assets</div>
+            <div id="rwaVal" class="value" style="color:var(--primary)">0.0000</div>
+            <div class="sub-value">Verified Infrastructure</div>
+        </div>
     </div>
-    <div class="card">
-        <div class="label">Sovereign Voting Power</div>
-        <div id="vpVal" class="value">0.2443</div>
-        <div class="sub-value" id="loyaltyStatus">Loyalty Multiplier: x1.000408</div>
-    </div>
-    <div class="card">
-        <div class="label">Captured Market Air</div>
-        <div id="airVal" class="value" style="color:#ffffff">0.00000442</div>
-        <div class="sub-value" id="difficultyMsg">Saturation Level: 0.00%</div>
-    </div>
-    <div class="card">
-        <div class="label">RWA Solidified Assets</div>
-        <div id="rwaVal" class="value" style="color:var(--neon-green)">0.0221</div>
-        <div class="sub-value">Verified Infrastructure</div>
-    </div>
-</div>
 
-<div class="efficiency-panel">
-    <div class="label">Solidification Efficiency</div>
-    <div class="bar-container"><div id="efficiencyBar"></div></div>
-    <div id="statusMsg" class="status-text">ORACLE SYNCED | Structural Debt: 12.02% | Market Inflation: 7.22%</div>
-</div>
+    <div class="efficiency-panel">
+        <div class="label">Solidification Efficiency</div>
+        <div class="bar-bg"><div id="efficiencyBar"></div></div>
+        <div id="statusMsg">ORACLE STANDBY...</div>
+        
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="deposit()">Deposit Safe Capital</button>
+            <button class="btn btn-outline" onclick="harvest()">Execute Solidification</button>
+        </div>
+    </div>
 
-<div class="button-group">
-    <button id="depBtn" class="btn-action" onclick="deposit()" style="display:none;">Deposit Safe Capital</button>
-    <button id="harvBtn" class="btn-action" onclick="harvest()" style="display:none;">Execute Solidification</button>
-</div>
-
-<div class="impact-analysis">
-    <div class="impact-title">MACRO-ECONOMIC IMPACT ANALYSIS</div>
-    <div class="impact-stats">
-        <div><div class="label">Total Debt Neutralized</div><div id="globalAir" class="value" style="font-size:1.2rem;">0.00 ETH</div></div>
-        <div><div class="label">Global RWA Infrastructure</div><div id="globalRwa" class="value" style="font-size:1.2rem;">0.02 Units</div></div>
-        <div><div class="label">Net Inflation Impact</div><div id="inflationRed" class="value" style="font-size:1.2rem; color:var(--neon-green)">-0.000000%</div></div>
+    <div class="impact-section">
+        <div class="impact-title">Macro-Economic Impact Analysis</div>
+        <div class="grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div style="text-align: center;">
+                <div class="label">Total Debt Neutralized</div>
+                <div id="globalAir" class="value" style="font-size: 1.25rem;">0.00 ETH</div>
+            </div>
+            <div style="text-align: center;">
+                <div class="label">Global RWA Infrastructure</div>
+                <div id="globalRwa" class="value" style="font-size: 1.25rem;">0.00 Units</div>
+            </div>
+            <div style="text-align: center;">
+                <div class="label">Net Inflation Impact</div>
+                <div id="inflationRed" class="value" style="font-size: 1.25rem; color: var(--primary)">-0.000000%</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -198,34 +102,34 @@
         {"inputs":[],"name":"totalGlobalRWA","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
         {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"users","outputs":[{"internalType":"uint256","name":"deposit","type":"uint256"},{"internalType":"uint256","name":"physicalInfra","type":"uint256"},{"internalType":"uint256","name":"lastUpdate","type":"uint256"},{"internalType":"uint256","name":"accumulatedAir","type":"uint256"}],"stateMutability":"view","type":"function"}
     ];
+    
+    // Η ΝΕΑ ΔΙΕΥΘΥΝΣΗ ΣΟΥ
     const CONTRACT_ADDRESS = "0x261174abFb883877498A9234059FfC723E920127";
+    
     let provider, signer, contract;
 
     async function connectWallet() {
         if (window.ethereum) {
-            try {
-                provider = new ethers.BrowserProvider(window.ethereum);
-                await provider.send("eth_requestAccounts", []);
-                signer = await provider.getSigner();
-                contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-                const addr = await signer.getAddress();
-                
-                document.getElementById('connectBtn').style.display = "none";
-                document.getElementById('depBtn').style.display = "block";
-                document.getElementById('harvBtn').style.display = "block";
-                document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + addr.substring(0,12) + "...";
-                
-                loadData(addr);
-                setInterval(() => loadData(addr), 5000);
-            } catch (err) { console.error(err); }
-        } else { alert("MetaMask required."); }
+            provider = new ethers.BrowserProvider(window.ethereum);
+            const accounts = await provider.send("eth_requestAccounts", []);
+            signer = await provider.getSigner();
+            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+            document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + accounts[0];
+            document.getElementById('connectBtn').innerText = "CONNECTED";
+            loadData(accounts[0]);
+            setInterval(() => loadData(accounts[0]), 5000);
+        }
     }
 
     async function deposit() {
+        const amount = prompt("Enter ETH amount to capture:");
+        if (!amount) return;
         try {
-            const amount = prompt("Enter ETH amount:", "0.1");
-            if (!amount || isNaN(amount)) return;
-            const tx = await signer.sendTransaction({ to: CONTRACT_ADDRESS, value: ethers.parseEther(amount) });
+            const tx = await signer.sendTransaction({
+                to: CONTRACT_ADDRESS,
+                value: ethers.parseEther(amount)
+            });
+            document.getElementById('statusMsg').innerText = "CAPTURING ASSET...";
             await tx.wait();
             alert("Safe Capital Secured.");
         } catch (e) { alert("Deposit failed."); }
@@ -245,27 +149,22 @@
             const now = Math.floor(Date.now() / 1000);
             const timeDiff = lastUpdate > 0 ? now - lastUpdate : 0;
 
-            // Οικονομικός Αλγόριθμος
+            // v10.2 Logic
             let liveAir = (depositVal * 0.17 / (31536000) * timeDiff) + parseFloat(ethers.formatEther(userData.accumulatedAir));
-            
+            let currentVP = parseFloat(ethers.formatEther(vpFromContract));
+            let saturationPercent = (globalAir > 0) ? (liveAir / globalAir) * 100 : 0;
+            let efficiency = Math.min(100, (depositVal > 0) ? 85 + (liveAir * 10) : 0);
+            let loyaltyBonus = 1 + (timeDiff / 1000000);
+
             document.getElementById('safeCap').innerText = depositVal.toFixed(4);
-            document.getElementById('vpVal').innerText = parseFloat(ethers.formatEther(vpFromContract)).toFixed(4);
+            document.getElementById('vpVal').innerText = currentVP.toFixed(4);
             document.getElementById('airVal').innerText = liveAir.toFixed(8);
             document.getElementById('rwaVal').innerText = parseFloat(ethers.formatEther(userData.physicalInfra)).toFixed(4);
+            document.getElementById('difficultyMsg').innerText = `Saturation Level: ${saturationPercent.toFixed(2)}%`;
+            document.getElementById('efficiencyBar').style.width = efficiency + "%";
+            document.getElementById('loyaltyStatus').innerText = `Loyalty Multiplier: x${loyaltyBonus.toFixed(6)}`;
+            document.getElementById('statusMsg').innerText = "ORACLE SYNCED | L2 NETWORK ACTIVE";
             
             document.getElementById('globalAir').innerText = globalAir.toFixed(2) + " ETH";
-            document.getElementById('globalRwa').innerText = (globalRwa + 0.02).toFixed(2) + " Units";
-            document.getElementById('inflationRed').innerText = "-" + (globalRwa * 0.00001).toFixed(6) + "%";
-        } catch (e) { console.error(e); }
-    }
-
-    async function harvest() {
-        try {
-            const tx = await contract.airHarvest();
-            await tx.wait();
-            alert("RWA HARVEST SUCCESSFUL.");
-        } catch (e) { alert("Harvest failed."); }
-    }
-</script>
-</body>
-</html>
+            document.getElementById('globalRwa').innerText = globalRwa.toFixed(2) + " Units";
+            document.getElementById('inflationRed').innerText = "-" + (globalRwa *
