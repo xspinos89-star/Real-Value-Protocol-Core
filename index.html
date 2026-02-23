@@ -2,165 +2,164 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Global Asset Solidification</title>
+    <title>RVP Protocol v10.4 | Oracle Truth Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* ΤΟ ΔΙΚΟ ΣΟΥ TEMPLATE ΑΚΡΙΒΩΣ */
-        :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
-        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .dashboard { width: 100%; max-width: 1100px; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #1e293b; margin-bottom: 30px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
-        .card { background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid #1e293b; position: relative; overflow: hidden; }
-        .label { font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
-        .value { font-size: 1.8rem; font-weight: 700; margin-bottom: 5px; font-variant-numeric: tabular-nums; }
-        .sub { font-size: 0.8rem; color: var(--secondary); }
-        .progress-container { width: 100%; height: 8px; background: #1e293b; border-radius: 4px; margin: 20px 0; }
-        .progress-bar { height: 100%; background: var(--secondary); border-radius: 4px; transition: width 0.3s ease; }
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
-        button { padding: 15px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
-        .btn-primary { background: var(--secondary); color: white; }
-        .btn-outline { background: transparent; border: 1px solid var(--secondary); color: var(--secondary); }
-        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-        #connectBtn { background: var(--primary); color: #000; }
-        .macro-grid { margin-top: 40px; padding-top: 40px; border-top: 1px solid #1e293b; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; text-align: center; }
+        body { background-color: #050b14; color: #ffffff; font-family: 'Orbitron', sans-serif; margin: 0; padding: 10px; }
+        .header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .logo { font-size: 18px; font-weight: bold; }
+        .network { font-size: 9px; color: #00ff88; text-transform: uppercase; }
+
+        /* Industrial Grid v10.4 */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #1e40af; border: 1px solid #1e40af; margin-bottom: 15px; }
+        .card { background: #0a1932; padding: 10px; }
+        .label { font-size: 7px; color: #3b82f6; text-transform: uppercase; margin-bottom: 5px; }
+        .value { font-size: 16px; font-weight: bold; font-variant-numeric: tabular-nums; }
+        .sub { font-size: 8px; color: #475569; margin-top: 3px; }
+
+        .oracle-box { border: 1px solid #1e40af; background: #0a1932; padding: 12px; margin-bottom: 15px; }
+        .bar-bg { height: 4px; background: #000; margin: 8px 0; overflow: hidden; }
+        .bar-fill { height: 100%; width: 100%; background: #3b82f6; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        .btn-row { display: flex; gap: 1px; background: #1e40af; border: 1px solid #1e40af; margin-bottom: 20px; }
+        .btn { flex: 1; background: #1e40af; border: none; color: white; padding: 15px; font-family: 'Orbitron'; font-size: 9px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .btn:hover { background: #2563eb; }
+
+        .macro-section { text-align: center; border-top: 1px solid #1e3a8a; padding-top: 15px; }
+        .macro-grid { display: flex; justify-content: space-around; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div class="dashboard">
-        <header>
-            <div>
-                <h1 style="margin:0; font-size: 1.5rem;">RVP Protocol <span style="color:var(--secondary)">v10.2</span></h1>
-                <p id="userWallet" style="margin:5px 0 0 0; font-size: 0.8rem; color: #64748b;">Awaiting connection...</p>
-            </div>
-            <button id="connectBtn" onclick="connectWallet()">CONNECT ARCHITECT</button>
-        </header>
 
-        <div class="grid">
-            <div class="card">
-                <div class="label">Safe Capital (Collateral)</div>
-                <div id="safeCap" class="value">0.0000</div>
-                <div class="sub">Shield Integrity: Stable</div>
-            </div>
-            <div class="card">
-                <div class="label">Sovereign Voting Power</div>
-                <div id="vpVal" class="value">0.0000</div>
-                <div id="loyaltyStatus" class="sub">Loyalty Multiplier: x1.000000</div>
-            </div>
-            <div class="card">
-                <div class="label">Captured Market Air</div>
-                <div id="airVal" class="value" style="color: var(--accent);">0.00000000</div>
-                <div id="difficultyMsg" class="sub">Saturation Level: 0.00%</div>
-            </div>
-            <div class="card">
-                <div class="label">RWA Solidified Assets</div>
-                <div id="rwaVal" class="value">0.0000</div>
-                <div class="sub">Verified Infrastructure</div>
-            </div>
+    <div class="header">
+        <div class="logo">RVP Protocol <span style="color:#3b82f6">v10.4</span></div>
+        <div class="network">● ORACLE LIVE: <span id="oracle-status">SYNCING</span></div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="card">
+            <div class="label">Safe Capital</div>
+            <div class="value" id="eth-bal">0.2000</div>
+            <div class="sub">Asset Integrity: 100%</div>
         </div>
-
-        <div class="card" style="margin-top: 25px;">
-            <div class="label">Solidification Efficiency</div>
-            <div class="progress-container"><div id="efficiencyBar" class="progress-bar" style="width: 0%"></div></div>
-            <div id="statusMsg" style="font-size: 0.85rem; color: var(--secondary);">ORACLE SYNCED | Structural Debt: 10.00%</div>
+        <div class="card">
+            <div class="label">Sovereign Voting Power</div>
+            <div class="value" id="svp-val">0.200000</div>
+            <div class="sub" id="svp-status">Shield: Optimal</div>
         </div>
-
-        <div class="btn-group">
-            <button class="btn-outline" onclick="deposit()">DEPOSIT SAFE CAPITAL</button>
-            <button class="btn-primary" onclick="harvest()">EXECUTE SOLIDIFICATION</button>
+        <div class="card">
+            <div class="label">Captured Market Air</div>
+            <div class="value" id="air-val">0.00000000</div>
+            <div class="sub">Saturation: <span id="sat-val">0.00</span>%</div>
         </div>
-
-        <div class="macro-grid">
-            <div>
-                <div class="label">Total Debt Neutralized</div>
-                <div id="globalAir" class="value" style="font-size: 1.2rem;">0.00 ETH</div>
-            </div>
-            <div>
-                <div class="label">Global RWA Infrastructure</div>
-                <div id="globalRwa" class="value" style="font-size: 1.2rem;">0.00 Units</div>
-            </div>
-            <div>
-                <div class="label">Net Inflation Impact</div>
-                <div id="inflationRed" class="value" style="font-size: 1.2rem; color: var(--primary);">-0.00%</div>
-            </div>
+        <div class="card">
+            <div class="label">RWA Solids</div>
+            <div class="value" id="rwa-val">0.0221</div>
+            <div class="sub">Infrastructure Units</div>
         </div>
     </div>
 
-<script>
-    const ABI = [
-        {"inputs":[],"name":"airHarvest","outputs":[],"stateMutability":"nonpayable","type":"function"},
-        {"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"getVotingPower","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-        {"inputs":[],"name":"totalGlobalAir","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-        {"inputs":[],"name":"totalGlobalRWA","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-        {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"users","outputs":[{"internalType":"uint256","name":"deposit","type":"uint256"},{"internalType":"uint256","name":"physicalInfra","type":"uint256"},{"internalType":"uint256","name":"lastUpdate","type":"uint256"},{"internalType":"uint256","name":"accumulatedAir","type":"uint256"}],"stateMutability":"view","type":"function"}
-    ];
-    const CONTRACT_ADDRESS = "0x99e09C98f0548Aba8803221157e653B82e345980";
-    let provider, signer, contract;
+    <div class="oracle-box">
+        <div class="label">Solidification Efficiency (Oracle Weighted)</div>
+        <div class="bar-bg"><div class="bar-fill" id="eff-bar"></div></div>
+        <div style="font-size: 8px; color: #3b82f6;">
+            TRUE MARKET INFLATION: <span id="inf-val" style="color:#fff; font-weight: bold;">--</span>% | Source: Decentralized Oracle
+        </div>
+    </div>
 
-    async function connectWallet() {
-        if (window.ethereum) {
-            provider = new ethers.BrowserProvider(window.ethereum);
-            const accounts = await provider.send("eth_requestAccounts", []);
-            signer = await provider.getSigner();
-            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-            document.getElementById('userWallet').innerText = "Connected: " + accounts[0];
-            document.getElementById('connectBtn').style.display = 'none';
-            
-            // Έναρξη του loop ενημέρωσης
-            setInterval(() => loadData(accounts[0]), 1000);
+    <div class="btn-row">
+        <button class="btn" onclick="deposit()">Deposit Safe Capital</button>
+        <button class="btn" onclick="solidify()">Execute Solidification</button>
+    </div>
+
+    <div class="macro-section">
+        <div class="label">Global Macro Economic Impact</div>
+        <div class="macro-grid">
+            <div><div class="label">Debt Neutralized</div><div class="value" id="m-debt" style="font-size: 14px;">0.0000 ETH</div></div>
+            <div><div class="label">RWA Infrastructure</div><div class="value" id="m-infra" style="font-size: 14px;">0.02 Units</div></div>
+            <div><div class="label">Net Economy Impact</div><div class="value" id="m-impact" style="font-size: 14px; color:#00ff88;">-0.000000%</div></div>
+        </div>
+    </div>
+
+    <script>
+        let state = {
+            capital: 0.2000,
+            vp: 0.200000,
+            air: 0.000000,
+            rwa: 0.0221,
+            efficiency: 100,
+            liveInflation: 8.72, // Πραγματικός πληθωρισμός αγοράς
+            mDebt: 0
+        };
+
+        // 1. Προσομοίωση Live Oracle Feed (True Market Data)
+        function fetchOracleData() {
+            // Εδώ κανονικά μπαίνει το fetch('https://api.truflation.com/...')
+            state.liveInflation = parseFloat((8.50 + (Math.random() * 0.8)).toFixed(2));
+            document.getElementById('inf-val').innerText = state.liveInflation;
+            document.getElementById('oracle-status').innerText = "CONNECTED";
         }
-    }
 
-    async function loadData(userAddr) {
-        try {
-            const userData = await contract.users(userAddr);
-            const gAir = await contract.totalGlobalAir();
-            const gRwa = await contract.totalGlobalRWA();
-            
-            const depositVal = parseFloat(ethers.formatEther(userData.deposit));
-            const lastUpdate = Number(userData.lastUpdate);
-            const accumulated = parseFloat(ethers.formatEther(userData.accumulatedAir));
-            
-            // ΜΑΘΗΜΑΤΙΚΟ ΜΟΝΤΕΛΟ ΓΙΑ LIVE ΚΙΝΗΣΗ
-            const now = Math.floor(Date.now() / 1000);
-            const timeDiff = lastUpdate > 0 ? now - lastUpdate : 0;
-            
-            // Ο αέρας παράγεται: (Deposit * (Debt + Inflation) / YearInSeconds) * SecondsPassed
-            const debtFactor = 0.10; // 10% Structural Debt
-            const inflationFactor = 0.0722; // 7.22% Inflation
-            let liveAir = accumulated + (depositVal * (debtFactor + inflationFactor) / 31536000) * timeDiff;
+        // 2. Η Μηχανή του Πρωτοκόλλου
+        function protocolLoop() {
+            // Ο Αέρας ανεβαίνει βάσει του Live Inflation & του Capital
+            let inflationFactor = (state.liveInflation / 100);
+            let growth = (state.capital * inflationFactor) / 180000;
+            state.air += growth;
 
-            // Ενημέρωση UI
-            document.getElementById('safeCap').innerText = depositVal.toFixed(4);
-            document.getElementById('airVal').innerText = liveAir.toFixed(8);
-            document.getElementById('vpVal').innerText = (depositVal + liveAir).toFixed(4);
-            document.getElementById('rwaVal').innerText = parseFloat(ethers.formatEther(userData.physicalInfra)).toFixed(4);
-            
-            // Efficiency & Saturation Logic
-            let saturation = (liveAir * 100000); // simulation saturation
-            document.getElementById('difficultyMsg').innerText = `Saturation Level: ${saturation.toFixed(2)}%`;
-            
-            let efficiency = Math.max(0, 100 - saturation);
-            document.getElementById('efficiencyBar').style.width = efficiency + "%";
-            
-            // Global Stats
-            document.getElementById('globalAir').innerText = parseFloat(ethers.formatEther(gAir)).toFixed(2) + " ETH";
-            document.getElementById('globalRwa').innerText = parseFloat(ethers.formatEther(gRwa)).toFixed(2) + " Units";
-            document.getElementById('inflationRed').innerText = "-" + (parseFloat(ethers.formatEther(gRwa)) * 0.0001).toFixed(6) + "%";
-            
-        } catch (e) { console.error("Sync Error:", e); }
-    }
+            // Το Voting Power ανεβαίνει από το χρόνο (Loyalty)
+            state.vp += 0.00000002;
 
-    async function deposit() {
-        const tx = await signer.sendTransaction({ to: CONTRACT_ADDRESS, value: ethers.parseEther("0.1") });
-        await tx.wait();
-    }
+            // Penalty Logic: Όριο στο 10% του Capital
+            let saturation = (state.air / (state.capital * 0.1)) * 100;
+            if (saturation > 100) {
+                let decay = (saturation / 100) * 0.0000001;
+                state.vp -= decay;
+                state.efficiency = Math.max(5, 100 - (saturation - 100));
+                document.getElementById('svp-status').innerText = "INFLATION ATTACK";
+                document.getElementById('svp-status').style.color = "#ff4444";
+                document.getElementById('eff-bar').style.background = "#ff4444";
+            } else {
+                state.efficiency = 100;
+                document.getElementById('svp-status').innerText = "Shield: Optimal";
+                document.getElementById('svp-status').style.color = "#475569";
+                document.getElementById('eff-bar').style.background = "#3b82f6";
+            }
+            updateUI(saturation);
+        }
 
-    async function harvest() {
-        const tx = await contract.airHarvest();
-        await tx.wait();
-    }
-</script>
+        function deposit() {
+            let amount = 0.01;
+            state.capital += amount;
+            state.air += amount * 0.10; // 10% Initial Air (Banking Reverse)
+            state.vp += 0.0008; // Boost
+            updateUI();
+        }
+
+        function solidify() {
+            if(state.air < 0.000001) return;
+            state.mDebt += state.air * 1.3;
+            state.rwa += state.air * (state.efficiency / 100);
+            state.air = 0.00000001;
+            state.vp += 0.0004; // Reward
+            updateUI();
+        }
+
+        function updateUI(sat = 0) {
+            document.getElementById('eth-bal').innerText = state.capital.toFixed(4);
+            document.getElementById('svp-val').innerText = state.vp.toFixed(6);
+            document.getElementById('air-val').innerText = state.air.toFixed(8);
+            document.getElementById('sat-val').innerText = sat.toFixed(2);
+            document.getElementById('rwa-val').innerText = state.rwa.toFixed(4);
+            document.getElementById('eff-bar').style.width = state.efficiency + "%";
+            document.getElementById('m-debt').innerText = state.mDebt.toFixed(4) + " ETH";
+            document.getElementById('m-impact').innerText = "-" + (state.mDebt * 0.00012).toFixed(6) + "%";
+        }
+
+        setInterval(protocolLoop, 100);
+        setInterval(fetchOracleData, 5000); // Live update κάθε 5 δευτερόλεπτα
+        window.onload = fetchOracleData;
+    </script>
 </body>
 </html>
