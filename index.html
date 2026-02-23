@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Solid Logic</title>
+    <title>RVP Protocol | Anti-Inflation Logic v12.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
         :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
@@ -30,7 +30,7 @@
 <div class="dashboard">
     <header>
         <div>
-            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v11.7</span></h1>
+            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v12.0</span></h1>
             <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">Architect Status: Not Connected</div>
         </div>
         <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
@@ -38,14 +38,14 @@
 
     <div class="grid">
         <div class="card">
-            <div class="label">Total Safe Assets (Deposited)</div>
+            <div class="label">Safe Capital (ETH)</div>
             <div id="safeCap" class="value">0.0000</div>
-            <div style="font-size:0.7rem; color:var(--primary)">Secure Collateral</div>
+            <div style="font-size:0.7rem; color:var(--primary)">Fixed - Anti-Inflationary Base</div>
         </div>
         <div class="card">
             <div class="label">Sovereign Voting Power</div>
             <div id="vpVal" class="value">0.0000</div>
-            <div id="loyaltyStatus" style="font-size:0.7rem; color:var(--secondary)">Growth Multiplier Active</div>
+            <div id="loyaltyStatus" style="font-size:0.75rem;">Time Bonus: x1.0000000</div>
         </div>
         <div class="card">
             <div class="label">Captured Market Air (Debt)</div>
@@ -53,28 +53,28 @@
             <div id="difficultyMsg" style="font-size:0.7rem; color:#888;">Saturation: 0.00%</div>
         </div>
         <div class="card">
-            <div class="label">RWA Solidified Assets</div>
+            <div class="label">Global Contribution (RWA)</div>
             <div id="rwaVal" class="value" style="color:var(--primary)">0.0000</div>
-            <div style="font-size:0.7rem;">Active Infrastructure</div>
+            <div style="font-size:0.7rem;">Solidified Infrastructure Units</div>
         </div>
         <div class="card" style="grid-column: span 2;">
             <div class="label">Solidification Efficiency</div>
             <div class="bar-container"><div id="efficiencyBar"></div></div>
-            <div id="statusMsg" class="status-box">SYSTEM SYNCING...</div>
+            <div id="statusMsg" class="status-box">SYNCING...</div>
         </div>
     </div>
 
     <div class="button-group">
-        <button id="depBtn" class="btn-main btn-deposit" onclick="deposit()" style="display:none;">Deposit Safe Capital</button>
+        <button id="depBtn" class="btn-main btn-deposit" onclick="deposit()" style="display:none;">Deposit Capital</button>
         <button id="harvBtn" class="btn-main btn-harvest" onclick="harvest()" style="display:none;">Execute Solidification</button>
     </div>
 
     <div style="margin-top:40px; background: rgba(59, 130, 246, 0.05); padding: 30px; border-radius: 20px; border: 1px solid #1e293b;">
         <h2 style="text-align:center; color:var(--secondary); margin-top:0; font-size: 1.1rem;">MACRO-ECONOMIC IMPACT ANALYSIS</h2>
         <div class="impact-stats">
-            <div><div class="label">Market Debt Eliminated</div><div id="globalAir" class="value" style="font-size:1.3rem;">0.00 ETH</div></div>
-            <div><div class="label">Global RWA Infrastructure</div><div id="globalRwa" class="value" style="font-size:1.3rem;">0.00 Units</div></div>
-            <div><div class="label">Net Inflation Reduction</div><div id="inflationRed" class="value" style="font-size:1.3rem; color:var(--primary)">-0.00%</div></div>
+            <div><div class="label">Debt Neutralized</div><div id="globalAir" class="value" style="font-size:1.3rem;">0.00 ETH</div></div>
+            <div><div class="label">System Infrastructure</div><div id="globalRwa" class="value" style="font-size:1.3rem;">0.00 Units</div></div>
+            <div><div class="label">Inflation Reduction</div><div id="inflationRed" class="value" style="font-size:1.3rem; color:var(--primary)">-0.00%</div></div>
         </div>
     </div>
 </div>
@@ -134,7 +134,7 @@
             const delta = now - lastTimestamp;
             lastTimestamp = now;
 
-            // ΛΟΓΙΚΗ CLEARANCE: Αν στο συμβόλαιο ο αέρας είναι 0, σημαίνει ότι κάναμε Solidify.
+            // Debt Reset Logic
             if (contractAccumulated === 0 && depositVal > 0 && rwaBonus > 0) {
                 initialDebtCleared = true; 
             }
@@ -156,27 +156,31 @@
                 efficiency = Math.max(0, 100 - (userSaturation - 100) * 10);
             }
 
-            // VOTING POWER = BASE + RWA BONUS * EFFICIENCY
-            let totalVP = (parseFloat(ethers.formatEther(vpFromContract)) + rwaBonus) * (efficiency/100);
+            // VOTING POWER LOGIC: Base Power (from Contract) * Time Multiplier * Efficiency
+            // Η βάση vpFromContract αυξάνεται αυτόματα όταν προσθέτεις κατάθεση στο blockchain.
+            let timeInProtocol = now - Number(userData.lastUpdate);
+            let timeMultiplier = 1 + (timeInProtocol * 0.0000001);
+            
+            let totalVP = parseFloat(ethers.formatEther(vpFromContract)) * timeMultiplier * (efficiency/100);
 
-            document.getElementById('safeCap').innerText = depositVal.toFixed(4);
+            // UI UPDATES
+            document.getElementById('safeCap').innerText = depositVal.toFixed(4); // Fixed ETH
+            document.getElementById('vpVal').innerText = totalVP.toFixed(6); // Dynamic Power
+            document.getElementById('loyaltyStatus').innerHTML = `Time Bonus: <b style="color:white">x${timeMultiplier.toFixed(8)}</b>`;
+            
             document.getElementById('airVal').innerText = liveAir.toFixed(10);
-            document.getElementById('vpVal').innerText = totalVP.toFixed(6);
             document.getElementById('rwaVal').innerText = rwaBonus.toFixed(4);
             document.getElementById('efficiencyBar').style.width = efficiency + "%";
             
             let statusHTML = `
                 <div style="display:flex; justify-content:space-around; font-size:0.8rem;">
-                    <span>📡 <b>ORACLE INFLATION:</b> ${(marketInf * 100).toFixed(2)}%</span>
+                    <span>📡 <b>ORACLE LIVE INFLATION:</b> ${(marketInf * 100).toFixed(2)}%</span>
                     <span style="color:${initialDebtCleared ? 'var(--primary)' : 'white'}">
                         🔒 <b>INITIAL DEBT:</b> ${initialDebtCleared ? 'SOLIDIFIED ✅' : fixedDebt.toFixed(4) + ' ETH'}
                     </span>
                 </div>
             `;
-            document.getElementById('statusMsg').innerHTML = statusHTML + (efficiency < 100 ? 
-                `<div style="color:var(--danger); margin-top:5px;">⚠️ INFLATION ATTACK: DEBT OVERFLOW</div>` : 
-                `<div style="color:var(--primary); margin-top:5px;">✅ SYSTEM STABLE: ASSETS PROTECTED</div>`);
-
+            document.getElementById('statusMsg').innerHTML = statusHTML;
             document.getElementById('difficultyMsg').innerText = `Saturation: ${userSaturation.toFixed(2)}%`;
             document.getElementById('globalAir').innerText = (globalAirVal + liveAir).toFixed(4) + " ETH";
             document.getElementById('globalRwa').innerText = globalRwaVal.toFixed(2) + " Units";
@@ -190,7 +194,7 @@
         if (amount) {
             const tx = await signer.sendTransaction({ to: CONTRACT_ADDRESS, value: ethers.parseEther(amount) });
             await tx.wait();
-            initialDebtCleared = false; // Νέο κεφάλαιο = Νέο χρέος για Solidification
+            initialDebtCleared = false; 
             accumulatedInflationAir = 0;
         }
     }
@@ -201,7 +205,7 @@
             await tx.wait();
             accumulatedInflationAir = 0;
             initialDebtCleared = true; 
-            alert("DEBT SUCCESSFULLY CONVERTED TO INFRASTRUCTURE.");
+            alert("DEBT NEUTRALIZED.");
         } catch (e) { alert("Solidification failed."); }
     }
 </script>
