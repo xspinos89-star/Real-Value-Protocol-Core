@@ -2,140 +2,235 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <title>RVP Protocol v10.2 | Real-Time Macro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RVP Protocol v10.2 | Professional Interface</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #050b14; color: #ffffff; font-family: 'Orbitron', sans-serif; margin: 0; padding: 10px; }
-        
-        /* Header Area */
-        .header { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #1e3a8a; padding-bottom: 5px; }
-        .logo { font-size: 18px; font-weight: bold; letter-spacing: 1px; }
-        .net-status { font-size: 9px; color: #00ff88; }
+        /* INDUSTRIAL UI CSS (v10.2 STYLE) */
+        :root {
+            --bg-dark: #050b14;
+            --border-blue: #1e40af;
+            --card-blue: #0a1932;
+            --neon-blue: #3b82f6;
+            --neon-green: #00ff88;
+        }
 
-        /* Statistics Grid - No Gaps */
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #1e40af; border: 1px solid #1e40af; margin-bottom: 15px; }
-        .card { background: #0a1932; padding: 12px; }
-        .label { font-size: 7px; color: #3b82f6; text-transform: uppercase; margin-bottom: 5px; }
+        body { 
+            background-color: var(--bg-dark); 
+            color: #ffffff; 
+            font-family: 'Orbitron', sans-serif; 
+            margin: 0; 
+            padding: 15px;
+        }
+
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 10px; 
+            border-bottom: 1px solid var(--border-blue);
+            padding-bottom: 5px;
+        }
+
+        .logo { font-size: 20px; font-weight: bold; }
+        .architect-info { font-size: 9px; color: var(--neon-blue); font-family: monospace; }
+
+        /* GRID SYSTEM ΟΠΩΣ ΣΤΗ ΦΩΤΟΓΡΑΦΙΑ */
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 1px; 
+            background: var(--border-blue); 
+            border: 1px solid var(--border-blue);
+            margin-bottom: 15px;
+        }
+
+        .card { 
+            background: var(--card-blue); 
+            padding: 12px; 
+        }
+
+        .label { font-size: 7px; color: var(--neon-blue); text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
         .value { font-size: 16px; font-weight: bold; font-variant-numeric: tabular-nums; }
         .sub { font-size: 8px; color: #475569; margin-top: 3px; }
 
-        /* Efficiency Bar */
-        .efficiency-box { border: 1px solid #1e40af; background: #0a1932; padding: 15px; margin-bottom: 15px; }
-        .bar-bg { height: 4px; background: #000; margin: 10px 0; }
-        .bar-fill { height: 100%; width: 78%; background: #3b82f6; box-shadow: 0 0 10px #3b82f6; }
+        /* EFFICIENCY BAR */
+        .efficiency-section { 
+            border: 1px solid var(--border-blue); 
+            background: var(--card-blue); 
+            padding: 15px; 
+            margin-bottom: 15px; 
+        }
 
-        /* Action Buttons */
-        .btn-row { display: flex; gap: 1px; background: #1e40af; border: 1px solid #1e40af; margin-bottom: 20px; }
-        .btn { flex: 1; background: #1e40af; border: none; color: white; padding: 15px; font-family: 'Orbitron'; font-size: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .bar-container { height: 4px; background: #000; margin: 10px 0; overflow: hidden; }
+        #efficiencyBar { height: 100%; width: 0%; background: var(--neon-blue); box-shadow: 0 0 10px var(--neon-blue); transition: 0.5s; }
+
+        /* BUTTONS (NO GAP) */
+        .btn-container { 
+            display: flex; 
+            gap: 1px; 
+            background: var(--border-blue); 
+            border: 1px solid var(--border-blue);
+            margin-bottom: 25px;
+        }
+
+        .btn { 
+            flex: 1; 
+            background: var(--border-blue); 
+            border: none; 
+            color: white; 
+            padding: 15px; 
+            font-family: 'Orbitron'; 
+            font-size: 10px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            text-transform: uppercase;
+        }
         .btn:hover { background: #2563eb; }
+        #connectBtn { background: var(--neon-green); color: black; border-radius: 4px; padding: 8px 15px; font-size: 10px; }
 
-        /* Macro Impact Analysis - Fixed Numbers */
-        .macro-section { text-align: center; border-top: 1px solid #1e3a8a; padding-top: 15px; }
+        /* MACRO IMPACT ANALYSIS */
+        .macro-box { text-align: center; border-top: 1px solid #1e3a8a; padding-top: 15px; }
         .macro-grid { display: flex; justify-content: space-around; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="logo">RVP Protocol <span style="color:#3b82f6">v10.2</span></div>
-        <div class="net-status">● ARBITRUM SEPOLIA ACTIVE</div>
+        <div class="logo">RVP Protocol <span style="color:var(--neon-blue)">v10.2</span></div>
+        <div>
+            <div id="userWallet" class="architect-info">Waiting for Architect...</div>
+            <button id="connectBtn" onclick="connectWallet()">CONNECT WALLET</button>
+        </div>
     </div>
 
     <div class="stats-grid">
         <div class="card">
-            <div class="label">Safe Capital</div>
-            <div class="value">0.2000</div>
-            <div class="sub">Shield: Stable</div>
+            <div class="label">Safe Capital (Collateral)</div>
+            <div id="safeCap" class="value">0.0000</div>
+            <div class="sub">Shield Integrity: Stable</div>
         </div>
         <div class="card">
             <div class="label">Sovereign Voting Power</div>
-            <div class="value" id="svp-display">0.244300</div>
-            <div class="sub">Loyalty: x1.0004</div>
+            <div id="vpVal" class="value">0.0000</div>
+            <div id="loyaltyStatus" class="sub">Engine: Offline</div>
         </div>
         <div class="card">
             <div class="label">Captured Market Air</div>
-            <div class="value" id="air-display">0.00000442</div>
-            <div class="sub">Sat Level: <span id="sat-val">0.00</span>%</div>
+            <div id="airVal" class="value" style="color: #f59e0b;">0.0000000000</div>
+            <div id="difficultyMsg" class="sub">Saturation: 0.00%</div>
         </div>
         <div class="card">
             <div class="label">RWA Solidified Assets</div>
-            <div class="value">0.0221</div>
-            <div class="sub">Verified Units</div>
+            <div id="rwaVal" class="value">0.0000</div>
+            <div class="sub">Verified Infrastructure</div>
         </div>
     </div>
 
-    <div class="efficiency-box">
+    <div class="efficiency-section">
         <div class="label">Solidification Efficiency</div>
-        <div class="bar-bg"><div class="bar-fill" id="eff-bar"></div></div>
-        <div style="font-size: 8px; color: #3b82f6;">
-            ORACLE SYNCED | Structural Debt: 10.00% | Market Inflation: <span id="inf-val">7.22</span>%
+        <div class="bar-container"><div id="efficiencyBar"></div></div>
+        <div id="statusMsg" style="font-size: 8px; color: var(--neon-blue);">
+            SYSTEM IDLE - AWAITING CONNECTION
         </div>
     </div>
 
-    <div class="btn-row">
-        <button class="btn" onclick="triggerAlert()">Deposit Safe Capital</button>
-        <button class="btn" onclick="solidify()">Execute Solidification</button>
+    <div class="btn-container" id="controls" style="display:none;">
+        <button class="btn" onclick="deposit()">Deposit Safe Capital</button>
+        <button class="btn" onclick="harvest()">Execute Solidification</button>
     </div>
 
-    <div class="macro-section">
+    <div class="macro-box">
         <div class="label">Macro-Economic Impact Analysis (Global)</div>
         <div class="macro-grid">
-            <div>
-                <div class="label">Total Debt Neutralized</div>
-                <div class="value" style="font-size: 14px;" id="global-debt">0.042 ETH</div>
-            </div>
-            <div>
-                <div class="label">Global RWA Infrastructure</div>
-                <div class="value" style="font-size: 14px;" id="global-infra">0.18 Units</div>
-            </div>
-            <div>
-                <div class="label">Net Inflation Impact</div>
-                <div class="value" style="font-size: 14px; color:#00ff88;" id="global-impact">-0.000052%</div>
-            </div>
+            <div><div class="label">Total Debt Neutralized</div><div id="globalAir" class="value">0.00 ETH</div></div>
+            <div><div class="label">Global RWA Infrastructure</div><div id="globalRwa" class="value">0.00 Units</div></div>
+            <div><div class="label">Net Inflation Impact</div><div id="inflationRed" class="value" style="color:var(--neon-green)">-0.00%</div></div>
         </div>
     </div>
 
-    <script>
-        let air = 0.00000442;
-        let baseSVP = 0.2443;
-        let efficiency = 78;
+<script>
+    // ΟΛΗ Η ΛΟΓΙΚΗ ΑΠΟ ΤΟ HTML ΣΟΥ
+    const ABI = [
+        {"inputs":[],"name":"airHarvest","outputs":[],"stateMutability":"nonpayable","type":"function"},
+        {"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"getVotingPower","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"physicalInfrastructure","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"totalGlobalAir","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"totalGlobalRWA","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"users","outputs":[{"internalType":"uint256","name":"deposit","type":"uint256"},{"internalType":"uint256","name":"physicalInfra","type":"uint256"},{"internalType":"uint256","name":"lastUpdate","type":"uint256"},{"internalType":"uint256","name":"accumulatedAir","type":"uint256"}],"stateMutability":"view","type":"function"}
+    ];
+    const CONTRACT_ADDRESS = "0x99e09C98f0548Aba8803221157e653B82e345980";
+    let provider, signer, contract;
 
-        function updateTicker() {
-            // Ο αέρας ανεβαίνει ρεαλιστικά
-            air += 0.0000000003;
-            document.getElementById('air-display').innerText = air.toFixed(10);
-            document.getElementById('svp-display').innerText = (baseSVP + air).toFixed(7);
+    async function connectWallet() {
+        if (window.ethereum) {
+            provider = new ethers.BrowserProvider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            signer = await provider.getSigner();
+            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+            const addr = await signer.getAddress();
             
-            // Saturation %
-            document.getElementById('sat-val').innerText = (air * 10000).toFixed(2);
+            document.getElementById('connectBtn').style.display = "none";
+            document.getElementById('controls').style.display = "flex";
+            document.getElementById('userWallet').innerText = "ARCHITECT: " + addr.substring(0,6) + "..." + addr.substring(38);
+            
+            setInterval(() => loadData(addr), 1000); // Update κάθε δευτερόλεπτο για "κίνηση"
+        }
+    }
 
-            // Oracle Inflation Drift
-            document.getElementById('inf-val').innerText = (7.22 + (Math.random()*0.02 - 0.01)).toFixed(2);
+    async function loadData(userAddr) {
+        try {
+            const userData = await contract.users(userAddr);
+            const gAir = await contract.totalGlobalAir();
+            const gRwa = await contract.totalGlobalRWA();
+            const vpFromContract = await contract.getVotingPower(userAddr);
 
-            // Penalty Logic: Αν ο αέρας δεν "καθαριστεί", η αποδοτικότητα πέφτει
-            if(air > 0.000005) {
-                efficiency -= 0.001;
-                document.getElementById('eff-bar').style.width = efficiency + "%";
+            const depositVal = parseFloat(ethers.formatEther(userData.deposit));
+            const globalRwa = parseFloat(ethers.formatEther(gRwa));
+            const globalAir = parseFloat(ethers.formatEther(gAir));
+            const now = Math.floor(Date.now() / 1000);
+            const timeDiff = Number(userData.lastUpdate) > 0 ? now - Number(userData.lastUpdate) : 0;
+
+            // REAL-TIME CALCULATIONS
+            let marketInf = 0.0722; 
+            let liveAir = (depositVal * (0.10 + marketInf) / (31536000)) * timeDiff + parseFloat(ethers.formatEther(userData.accumulatedAir));
+            
+            let efficiency = 100;
+            if (liveAir > 0.000005) {
+                efficiency = Math.max(5, 100 - (liveAir * 1000000));
+                document.getElementById('statusMsg').style.color = "#ef4444";
+                document.getElementById('statusMsg').innerText = "DEBT OVERFLOW: EXECUTE SOLIDIFICATION";
+            } else {
+                document.getElementById('statusMsg').style.color = "var(--neon-blue)";
+                document.getElementById('statusMsg').innerText = `ORACLE SYNCED | Structural Debt: 10.00% | Market Inflation: ${(marketInf*100).toFixed(2)}%`;
             }
-        }
 
-        function triggerAlert() {
-            // Αναπαράσταση του σφάλματος που είδαμε στη φωτό
-            alert("xspinos89-star.github.io λέει:\nDeposit failed.");
-        }
+            // UPDATE UI
+            document.getElementById('safeCap').innerText = depositVal.toFixed(4);
+            document.getElementById('vpVal').innerText = (parseFloat(ethers.formatEther(vpFromContract)) + liveAir).toFixed(6);
+            document.getElementById('airVal').innerText = liveAir.toFixed(10);
+            document.getElementById('rwaVal').innerText = parseFloat(ethers.formatEther(userData.physicalInfra)).toFixed(4);
+            document.getElementById('efficiencyBar').style.width = efficiency + "%";
+            document.getElementById('globalAir').innerText = globalAir.toFixed(2) + " ETH";
+            document.getElementById('globalRwa').innerText = globalRwa.toFixed(2) + " Units";
+            document.getElementById('inflationRed').innerText = "-" + (globalRwa * 0.00001).toFixed(6) + "%";
+        } catch (e) { console.error(e); }
+    }
 
-        function solidify() {
-            // Μηδενισμός αέρα και διόρθωση αποδοτικότητας (Reward)
-            air = 0.0000000001;
-            efficiency = 96;
-            document.getElementById('eff-bar').style.width = "96%";
-            
-            // Μικρή αύξηση στα Macro για να φαίνεται η επίδραση
-            document.getElementById('global-debt').innerText = "0.043 ETH";
-            document.getElementById('global-infra').innerText = "0.19 Units";
-        }
+    async function deposit() {
+        try {
+            const tx = await signer.sendTransaction({ to: CONTRACT_ADDRESS, value: ethers.parseEther("0.1") });
+            await tx.wait();
+        } catch (e) { alert("Deposit failed."); }
+    }
 
-        setInterval(updateTicker, 100);
-    </script>
+    async function harvest() {
+        try {
+            const tx = await contract.airHarvest();
+            await tx.wait();
+        } catch (e) { alert("Harvest failed."); }
+    }
+</script>
 </body>
 </html>
