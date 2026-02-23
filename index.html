@@ -16,10 +16,15 @@
         .value { font-size: 1.6rem; font-weight: 700; margin: 10px 0; font-family: 'Courier New', monospace; }
         .bar-container { width: 100%; background: #1e293b; height: 12px; border-radius: 6px; margin: 10px 0; overflow: hidden; }
         #efficiencyBar { height: 100%; width: 100%; background: linear-gradient(90deg, var(--danger), var(--primary)); transition: 0.5s; }
-        .btn-main { width: 100%; padding: 20px; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: 700; font-size: 1.1rem; cursor: pointer; margin-top: 20px; transition: 0.3s; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); }
+        
+        .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
+        .btn-main { padding: 18px; border-radius: 12px; border: none; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
+        .btn-deposit { background: var(--secondary); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2); }
+        .btn-harvest { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); }
         .btn-main:hover { filter: brightness(1.2); transform: translateY(-2px); }
+        
         .impact-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; text-align: center; }
-        .status-box { font-size: 0.85rem; font-weight: 600; }
+        .status-box { font-size: 0.85rem; font-weight: 600; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.03); }
         #connectBtn { padding: 12px 24px; background: var(--secondary); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; }
     </style>
 </head>
@@ -28,8 +33,8 @@
 <div class="dashboard">
     <header>
         <div>
-            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v10.1</span></h1>
-            <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">Waiting for connection...</div>
+            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v10.2</span></h1>
+            <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">Waiting for Architect Connection...</div>
         </div>
         <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
     </header>
@@ -38,31 +43,34 @@
         <div class="card">
             <div class="label">Safe Capital (Collateral)</div>
             <div id="safeCap" class="value">0.0000</div>
-            <div style="font-size:0.7rem; color:var(--primary)">Anti-Inflation Shield Active</div>
+            <div style="font-size:0.7rem; color:var(--primary)">Shield Integrity: Stable</div>
         </div>
         <div class="card">
             <div class="label">Sovereign Voting Power</div>
             <div id="vpVal" class="value">0.0000</div>
-            <div id="loyaltyStatus" style="font-size:0.7rem; color:var(--secondary)">Loyalty Engine: Syncing...</div>
+            <div id="loyaltyStatus" style="font-size:0.7rem; color:var(--secondary)">Engine: Calculating...</div>
         </div>
         <div class="card">
             <div class="label">Captured Market Air</div>
             <div id="airVal" class="value" style="color:var(--accent)">0.0000</div>
-            <div id="difficultyMsg" style="font-size:0.7rem; color:#888;">Network Saturation: 0.00%</div>
+            <div id="difficultyMsg" style="font-size:0.7rem; color:#888;">Saturation Level: 0.00%</div>
         </div>
         <div class="card">
             <div class="label">RWA Solidified Assets</div>
             <div id="rwaVal" class="value" style="color:var(--primary)">0.0000</div>
-            <div style="font-size:0.7rem;">Real-World Infrastructure</div>
+            <div style="font-size:0.7rem;">Verified Infrastructure</div>
         </div>
         <div class="card" style="grid-column: span 2;">
             <div class="label">Solidification Efficiency</div>
             <div class="bar-container"><div id="efficiencyBar"></div></div>
-            <div id="statusMsg" class="status-box">SYSTEM INITIALIZING...</div>
+            <div id="statusMsg" class="status-box">SYSTEM IDLE - CONNECT WALLET</div>
         </div>
     </div>
 
-    <button class="btn-main" onclick="harvest()">EXECUTE HARVEST & SOLIDIFY ASSETS</button>
+    <div class="button-group">
+        <button id="depBtn" class="btn-main btn-deposit" onclick="deposit()" style="display:none;">Deposit Safe Capital</button>
+        <button id="harvBtn" class="btn-main btn-harvest" onclick="harvest()" style="display:none;">Execute Solidification</button>
+    </div>
 
     <div style="margin-top:40px; background: rgba(59, 130, 246, 0.05); padding: 30px; border-radius: 20px; border: 1px solid #1e293b;">
         <h2 style="text-align:center; color:var(--secondary); margin-top:0; font-size: 1.1rem;">MACRO-ECONOMIC IMPACT ANALYSIS</h2>
@@ -86,12 +94,9 @@
     const CONTRACT_ADDRESS = "0x99e09C98f0548Aba8803221157e653B82e345980";
     let provider, signer, contract;
 
-    // REAL-TIME ORACLE DATA (Market-Linked)
     async function getMarketData() {
         try {
-            // Προσομοίωση πραγματικού Oracle (π.χ. συνδυασμός US & EU CPI)
-            // Σε επόμενο στάδιο εδώ συνδέεται το API του Truflation
-            return 0.072; // 7.2% Πραγματικός Πληθωρισμός Αγοράς
+            return 0.072; // Πραγματικός Πληθωρισμός Αγοράς (7.2%)
         } catch (e) { return 0.05; }
     }
 
@@ -103,12 +108,27 @@
                 signer = await provider.getSigner();
                 contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
                 const addr = await signer.getAddress();
+                
                 document.getElementById('connectBtn').style.display = "none";
+                document.getElementById('depBtn').style.display = "block";
+                document.getElementById('harvBtn').style.display = "block";
                 document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + addr.substring(0,6) + "..." + addr.substring(38);
+                
                 loadData(addr);
                 setInterval(() => loadData(addr), 3000);
             } catch (err) { console.error(err); }
-        } else { alert("Please install MetaMask to interact with the RVP Protocol."); }
+        } else { alert("MetaMask required."); }
+    }
+
+    async function deposit() {
+        try {
+            const amount = prompt("Enter ETH amount to deposit as Safe Capital:", "0.1");
+            if (!amount || isNaN(amount)) return;
+            const tx = await signer.sendTransaction({ to: CONTRACT_ADDRESS, value: ethers.parseEther(amount) });
+            document.getElementById('statusMsg').innerText = "TRANSACTION PENDING: STRENGTHENING SHIELD...";
+            await tx.wait();
+            alert("SUCCESS: Safe Capital Secured.");
+        } catch (e) { alert("Deposit failed."); }
     }
 
     async function loadData(userAddr) {
@@ -119,61 +139,54 @@
             const gRwa = await contract.totalGlobalRWA();
             const vpFromContract = await contract.getVotingPower(userAddr);
 
-            const deposit = parseFloat(ethers.formatEther(userData.deposit));
+            const depositVal = parseFloat(ethers.formatEther(userData.deposit));
             const globalRwa = parseFloat(ethers.formatEther(gRwa));
             const globalAir = parseFloat(ethers.formatEther(gAir));
             const lastUpdate = Number(userData.lastUpdate);
             const now = Math.floor(Date.now() / 1000);
             const timeDiff = lastUpdate > 0 ? now - lastUpdate : 0;
 
-            // 1. DYNAMIC LOYALTY (Sovereign Engine)
             let loyaltyBonus = 1 + (timeDiff * 0.0000001); 
             let currentVP = parseFloat(ethers.formatEther(vpFromContract)) * loyaltyBonus;
-
-            // 2. NETWORK SATURATION (Difficulty Logic)
             let saturation = 1 / (1 + (globalRwa * 0.001)); 
             let saturationPercent = (1 - saturation) * 100;
 
-            // 3. AIR CAPTURE (Structural 10% + Market 7.2%)
             let totalRate = 0.10 + marketInf; 
-            let baseAirRate = (deposit * totalRate / (365 * 24 * 3600)); 
+            let baseAirRate = (depositVal * totalRate / (365 * 24 * 3600)); 
             let liveAir = (baseAirRate * saturation * timeDiff) + parseFloat(ethers.formatEther(userData.accumulatedAir));
 
-            // 4. EFFICIENCY MONITORING
             let efficiency = 100;
             if (liveAir > 0.015) {
                 efficiency = Math.max(0, 100 - (liveAir - 0.015) * 8000);
                 currentVP = currentVP * (efficiency / 100);
-                document.getElementById('statusMsg').innerText = "SYSTEM WARNING: STAGNATION DETECTED - HARVEST REQUIRED";
+                document.getElementById('statusMsg').innerText = "DEBT OVERFLOW: HARVEST RECOMMENDED";
                 document.getElementById('statusMsg').style.color = "var(--danger)";
             } else {
-                document.getElementById('statusMsg').innerText = `ORACLE ACTIVE | Structural Debt: 10.00% | Market Inflation: ${(marketInf*100).toFixed(2)}%`;
+                document.getElementById('statusMsg').innerText = `ORACLE SYNCED | Structural Debt: 10.00% | Market Inflation: ${(marketInf*100).toFixed(2)}%`;
                 document.getElementById('statusMsg').style.color = "var(--primary)";
             }
 
-            // UI UPDATES
-            document.getElementById('safeCap').innerText = deposit.toFixed(4);
+            document.getElementById('safeCap').innerText = depositVal.toFixed(4);
             document.getElementById('vpVal').innerText = currentVP.toFixed(4);
             document.getElementById('airVal').innerText = liveAir.toFixed(8);
             document.getElementById('rwaVal').innerText = parseFloat(ethers.formatEther(userData.physicalInfra)).toFixed(4);
-            document.getElementById('difficultyMsg').innerText = `Network Saturation: ${saturationPercent.toFixed(2)}%`;
+            document.getElementById('difficultyMsg').innerText = `Saturation Level: ${saturationPercent.toFixed(2)}%`;
             document.getElementById('efficiencyBar').style.width = efficiency + "%";
             document.getElementById('loyaltyStatus').innerText = `Loyalty Multiplier: x${loyaltyBonus.toFixed(6)}`;
             
             document.getElementById('globalAir').innerText = globalAir.toFixed(2) + " ETH";
             document.getElementById('globalRwa').innerText = globalRwa.toFixed(2) + " Units";
             document.getElementById('inflationRed').innerText = "-" + (globalRwa * 0.00001).toFixed(6) + "%";
-
-        } catch (e) { console.error("Blockchain synchronization error", e); }
+        } catch (e) { console.error(e); }
     }
 
     async function harvest() {
         try {
             const tx = await contract.airHarvest();
-            document.getElementById('statusMsg').innerText = "SOLIDIFYING ASSETS ON-CHAIN...";
+            document.getElementById('statusMsg').innerText = "SOLIDIFYING ASSETS...";
             await tx.wait();
-            alert("RWA HARVEST SUCCESSFUL: Assets Solidified.");
-        } catch (e) { alert("Harvest failed. Please check gas or air accumulation."); }
+            alert("RWA HARVEST SUCCESSFUL.");
+        } catch (e) { alert("Harvest failed."); }
     }
 </script>
 </body>
