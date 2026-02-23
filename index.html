@@ -6,7 +6,6 @@
     <title>RVP Protocol | Global Asset Solidification</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
-        /* ΤΟ ΔΙΚΟ ΣΟΥ TEMPLATE - ΔΕΝ ΑΛΛΑΞΕ ΟΥΤΕ ΜΙΑ ΓΡΑΜΜΗ */
         :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
         body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; display: flex; justify-content: center; }
         .dashboard { width: 100%; max-width: 1100px; }
@@ -84,12 +83,9 @@
 </div>
 
 <script>
-    // ΛΕΙΤΟΥΡΓΙΚΕΣ ΑΛΛΑΓΕΣ ΜΟΝΟ ΣΤΟ SCRIPT
-    let currentMarketInflation = 0.0842; // Ξεκινάμε με 8.42% (Real Market Data)
-    
-    // Simulation Oracle: Αλλάζει τον πληθωρισμό live
+    let marketInf = 0.0842; 
     setInterval(() => {
-        currentMarketInflation = parseFloat((0.08 + (Math.random() * 0.02)).toFixed(4));
+        marketInf = parseFloat((0.08 + (Math.random() * 0.02)).toFixed(4));
     }, 5000);
 
     const ABI = [
@@ -115,23 +111,20 @@
                 document.getElementById('connectBtn').style.display = "none";
                 document.getElementById('depBtn').style.display = "block";
                 document.getElementById('harvBtn').style.display = "block";
-                document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + addr.substring(0,6) + "..." + addr.substring(38);
+                document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + addr;
                 
                 loadData(addr);
-                setInterval(() => loadData(addr), 1000); // Πιο συχνό update για να φαίνεται η ροή
+                setInterval(() => loadData(addr), 1000);
             } catch (err) { console.error(err); }
         } else { alert("MetaMask required."); }
     }
 
     async function deposit() {
         try {
-            const amount = prompt("Enter ETH amount to deposit as Safe Capital:", "0.1");
-            if (!amount || isNaN(amount)) return;
+            const amount = prompt("ETH to deposit:", "0.1");
+            if (!amount) return;
             const tx = await signer.sendTransaction({ to: CONTRACT_ADDRESS, value: ethers.parseEther(amount) });
-            document.getElementById('statusMsg').innerText = "TRANSACTION PENDING: STRENGTHENING SHIELD...";
             await tx.wait();
-            // Η λογική μας: Η κατάθεση δίνει ένα άμεσο "Air Boost" (συμβολικά στο UI μέχρι το επόμενο sync)
-            alert("SUCCESS: Safe Capital Secured.");
         } catch (e) { alert("Deposit failed."); }
     }
 
@@ -149,39 +142,39 @@
             const now = Math.floor(Date.now() / 1000);
             const timeDiff = lastUpdate > 0 ? now - lastUpdate : 0;
 
-            // LOYALTY LOGIC (Time-based growth)
             let loyaltyBonus = 1 + (timeDiff * 0.0000001); 
             let currentVP = parseFloat(ethers.formatEther(vpFromContract)) * loyaltyBonus;
-            
-            // SATURATION LOGIC
-            let saturation = 1 / (1 + (globalRwa * 0.001)); 
-            let saturationPercent = (1 - saturation) * 100;
 
-            // AIR GENERATION: Structural Debt (10%) + Live Oracle Inflation
-            let totalRate = 0.10 + currentMarketInflation; 
+            // ΛΟΓΙΚΗ: 10% Structural Debt + Live Market Inflation
+            let totalRate = 0.10 + marketInf; 
             let baseAirRate = (depositVal * totalRate / (365 * 24 * 3600)); 
             let liveAir = (baseAirRate * timeDiff) + parseFloat(ethers.formatEther(userData.accumulatedAir));
 
+            // ΔΙΟΡΘΩΣΗ SATURATION: Πόσο αέρα έχεις εσύ σε σχέση με το 5% του Capital σου
+            let userSaturation = 0;
+            if (depositVal > 0) {
+                userSaturation = (liveAir / (depositVal * 0.05)) * 100;
+            }
+
             // PENALTY & EFFICIENCY
             let efficiency = 100;
-            // Αν ο αέρας ξεπεράσει το 5% της κατάθεσης, ξεκινά το penalty
-            let airThreshold = depositVal * 0.05;
-            if (depositVal > 0 && liveAir > airThreshold) {
-                efficiency = Math.max(0, 100 - (liveAir - airThreshold) * 5000);
-                currentVP = currentVP * (efficiency / 100); // Το VP μειώνεται λόγω "τοξικού" αέρα
+            if (userSaturation > 100) {
+                // Όσο ανεβαίνει το saturation πάνω από 100%, πέφτει το efficiency
+                efficiency = Math.max(0, 100 - (userSaturation - 100) * 2); 
+                currentVP = currentVP * (efficiency / 100); // Μείωση Voting Power
                 document.getElementById('statusMsg').innerText = "INFLATION OVERFLOW: SOLIDIFICATION REQUIRED";
                 document.getElementById('statusMsg').style.color = "var(--danger)";
             } else {
-                document.getElementById('statusMsg').innerText = `ORACLE SYNCED | Structural Debt: 10.00% | Market Inflation: ${(currentMarketInflation*100).toFixed(2)}%`;
+                document.getElementById('statusMsg').innerText = `ORACLE SYNCED | Structural Debt: 10.00% | Market Inflation: ${(marketInf*100).toFixed(2)}%`;
                 document.getElementById('statusMsg').style.color = "var(--primary)";
             }
 
-            // UPDATE UI ELEMENTS
+            // UI UPDATES
             document.getElementById('safeCap').innerText = depositVal.toFixed(4);
             document.getElementById('vpVal').innerText = currentVP.toFixed(6);
             document.getElementById('airVal').innerText = liveAir.toFixed(10);
             document.getElementById('rwaVal').innerText = parseFloat(ethers.formatEther(userData.physicalInfra)).toFixed(4);
-            document.getElementById('difficultyMsg').innerText = `Saturation Level: ${saturationPercent.toFixed(2)}%`;
+            document.getElementById('difficultyMsg').innerText = `Saturation Level: ${userSaturation.toFixed(2)}%`;
             document.getElementById('efficiencyBar').style.width = efficiency + "%";
             document.getElementById('loyaltyStatus').innerText = `Loyalty Multiplier: x${loyaltyBonus.toFixed(6)}`;
             
@@ -194,9 +187,8 @@
     async function harvest() {
         try {
             const tx = await contract.airHarvest();
-            document.getElementById('statusMsg').innerText = "SOLIDIFYING ASSETS...";
             await tx.wait();
-            alert("RWA HARVEST SUCCESSFUL.");
+            alert("SUCCESSFUL SOLIDIFICATION.");
         } catch (e) { alert("Harvest failed."); }
     }
 </script>
