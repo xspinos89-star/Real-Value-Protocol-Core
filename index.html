@@ -33,7 +33,7 @@
 <div class="dashboard">
     <header>
         <div>
-            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v10.2</span></h1>
+            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v10.9</span></h1>
             <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">Waiting for Architect Connection...</div>
         </div>
         <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
@@ -141,50 +141,60 @@
             const now = Math.floor(Date.now() / 1000);
             const timeDiff = lastUpdate > 0 ? now - lastUpdate : 0;
 
-            let loyaltyBonus = 1 + (timeDiff * 0.0000001); 
-            let currentVP = parseFloat(ethers.formatEther(vpFromContract)) * loyaltyBonus;
-
-            // --- FIXED DEBT & DEFLATIONARY FEEDBACK ---
-            // 1. Fixed Debt: Το 10% του κεφαλαίου είναι η βάση του αέρα.
+            // --- 1. FIXED DEBT (10% OF DEPOSIT) ---
+            // Αυτό είναι το δομικό χρέος του κλασματικού αποθέματος
             let fixedDebt = depositVal * 0.10;
 
-            // 2. Inflation Impact: Ο παγκόσμιος αντίκτυπος μειώνει τον ρυθμό αέρα.
-            let inflationMitigation = globalRwaVal * 0.002; 
-            let effectiveInflation = Math.max(0, marketInf - inflationMitigation);
+            // --- 2. DEFLATIONARY FEEDBACK ---
+            // Οι υποδομές μειώνουν την επίδραση του πληθωρισμού
+            let mitigationPercent = globalRwaVal * 0.002; 
+            let effectiveInf = Math.max(0, marketInf - mitigationPercent);
 
-            // 3. Dynamic Air (Flow): Προστίθεται στον χρόνο χωρίς να μειώνεται ποτέ.
-            let inflationRatePerSec = (depositVal * effectiveInflation) / (365 * 24 * 3600);
-            let flowAir = inflationRatePerSec * timeDiff;
+            // --- 3. INFLATION FLOW (ACCUMULATED OVER TIME) ---
+            // Ο πληθωρισμός προστίθεται ως "επιπλέον αέρας" στον χρόνο
+            let inflationFlow = (depositVal * effectiveInf * timeDiff) / (365 * 24 * 3600);
 
-            // 4. ΣΥΝΟΛΟ: Στατικό Χρέος + Ροή Πληθωρισμού + Αέρας από προηγούμενα harvests (accumulatedAir)
-            let liveAir = fixedDebt + flowAir + parseFloat(ethers.formatEther(userData.accumulatedAir));
+            // --- 4. TOTAL LIVE AIR ---
+            // Στατικό χρέος + Ροή πληθωρισμού + Αέρας που έχει ήδη καταγραφεί στο blockchain
+            let liveAir = fixedDebt + inflationFlow + parseFloat(ethers.formatEther(userData.accumulatedAir));
 
-            // Saturation: Σχέση αέρα προς το 10% του κεφαλαίου (Threshold)
-            let userSaturation = depositVal > 0 ? (liveAir / (depositVal * 0.10)) * 100 : 0;
+            // --- 5. SATURATION & EFFICIENCY ---
+            // Το όριο είναι το 10% του κεφαλαίου. Επειδή το fixedDebt είναι ήδη 10%, 
+            // ξεκινάμε από το 100% και κάθε δευτερόλεπτο πληθωρισμού μας ρίχνει το efficiency.
+            let threshold = depositVal * 0.10;
+            let userSaturation = threshold > 0 ? (liveAir / threshold) * 100 : 0;
 
             let efficiency = 100;
             if (userSaturation > 100) {
-                efficiency = Math.max(0, 100 - (userSaturation - 100) * 2); 
-                currentVP = currentVP * (efficiency / 100); 
-                document.getElementById('statusMsg').innerText = "INFLATION ATTACK: SOLIDIFY IMMEDIATELY";
-                document.getElementById('statusMsg').style.color = "var(--danger)";
-            } else {
-                document.getElementById('statusMsg').innerText = `ORACLE: ${(marketInf*100).toFixed(2)}% | RVP IMPACT: -${(inflationMitigation*100).toFixed(2)}% | EFFECTIVE: ${(effectiveInflation*100).toFixed(2)}%`;
-                document.getElementById('statusMsg').style.color = "var(--primary)";
+                // Επιθετικό penalty για να αναγκάσει το solidification
+                efficiency = Math.max(0, 100 - (userSaturation - 100) * 10); 
             }
 
             // UI UPDATES
             document.getElementById('safeCap').innerText = depositVal.toFixed(4);
-            document.getElementById('vpVal').innerText = currentVP.toFixed(6);
+            document.getElementById('vpVal').innerText = (parseFloat(ethers.formatEther(vpFromContract)) * (efficiency/100)).toFixed(6);
             document.getElementById('airVal').innerText = liveAir.toFixed(10);
             document.getElementById('rwaVal').innerText = parseFloat(ethers.formatEther(userData.physicalInfra)).toFixed(4);
-            document.getElementById('difficultyMsg').innerText = `Saturation: ${userSaturation.toFixed(2)}% | Net Impact: -${(inflationMitigation*100).toFixed(2)}%`;
+            document.getElementById('difficultyMsg').innerText = `Saturation: ${userSaturation.toFixed(2)}% | Net Impact: -${(mitigationPercent*100).toFixed(2)}%`;
             document.getElementById('efficiencyBar').style.width = efficiency + "%";
-            document.getElementById('loyaltyStatus').innerText = `Loyalty Multiplier: x${loyaltyBonus.toFixed(6)}`;
+            document.getElementById('loyaltyStatus').innerText = `Loyalty Multiplier: x${(1 + (timeDiff * 0.0000001)).toFixed(6)}`;
             
+            // GLOBAL STATS
             document.getElementById('globalAir').innerText = parseFloat(ethers.formatEther(gAir)).toFixed(2) + " ETH";
             document.getElementById('globalRwa').innerText = globalRwaVal.toFixed(2) + " Units";
-            document.getElementById('inflationRed').innerText = "-" + (inflationMitigation * 100).toFixed(4) + "%";
+            document.getElementById('inflationRed').innerText = "-" + (mitigationPercent * 100).toFixed(4) + "%";
+
+            // STATUS BOX MESSAGE
+            if (efficiency < 100) {
+                document.getElementById('statusMsg').innerText = "CRITICAL: DEBT OVERFLOW | EFFICIENCY DROPPING";
+                document.getElementById('statusMsg').style.color = "var(--danger)";
+            } else if (depositVal > 0) {
+                document.getElementById('statusMsg').innerText = `SYSTEM STABLE | Effective Inflation: ${(effectiveInf*100).toFixed(2)}%`;
+                document.getElementById('statusMsg').style.color = "var(--primary)";
+            } else {
+                document.getElementById('statusMsg').innerText = "AWAITING CAPITAL DEPOSIT";
+            }
+
         } catch (e) { console.error(e); }
     }
 
@@ -192,7 +202,7 @@
         try {
             const tx = await contract.airHarvest();
             await tx.wait();
-            alert("SOLIDIFICATION SUCCESSFUL.");
+            alert("SOLIDIFICATION SUCCESSFUL. DEBT CONVERTED TO RWA.");
         } catch (e) { alert("Harvest failed."); }
     }
 </script>
