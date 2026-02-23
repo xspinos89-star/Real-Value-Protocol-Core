@@ -3,147 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Arbitrum L2 Dashboard</title>
+    <title>RVP Protocol | Advanced RWA Economic Engine</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #28a745; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #2196f3; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 90%; max-width: 600px; margin-top: 50px; background: var(--card); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #334155; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .badge { background: var(--accent); color: white; padding: 5px 12px; border-radius: 50px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
-        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; text-align: center; }
-        .stat-value { font-size: 1.8rem; font-weight: bold; color: var(--primary); display: block; }
-        .stat-label { font-size: 0.9rem; color: #94a3b8; }
-        .input-group { margin-bottom: 20px; }
-        input { width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 1rem; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; border-radius: 10px; border: none; cursor: pointer; font-size: 1.1rem; font-weight: bold; transition: all 0.3s; margin-bottom: 10px; }
-        .btn-deposit { background: var(--primary); color: white; }
-        .btn-deposit:hover { background: #218838; transform: translateY(-2px); }
-        .btn-harvest { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
-        .btn-harvest:hover { background: var(--primary); color: white; }
-        .footer { margin-top: 20px; text-align: center; font-size: 0.85rem; color: #64748b; }
-        a { color: var(--accent); text-decoration: none; }
-        #status { margin-top: 15px; text-align: center; font-weight: bold; }
+        :root {
+            --arb-blue: #28a0f0;
+            --neon-green: #00ff88;
+            --warning-red: #ff4444;
+            --gold: #ffcc00;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background: radial-gradient(circle at top right, #0d1721, #05070a);
+            color: white;
+            font-family: 'Rajdhani', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            padding: 15px 40px;
+            background: rgba(10, 15, 24, 0.9);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--arb-blue);
+            backdrop-filter: blur(15px);
+            position: sticky; top: 0; z-index: 1000;
+        }
+
+        .container { max-width: 1300px; margin: 30px auto; padding: 0 20px; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px; }
+
+        .card {
+            background: var(--glass);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            transition: 0.3s;
+        }
+
+        .card:hover { border-color: var(--arb-blue); background: rgba(255,255,255,0.08); }
+
+        .stat-label { color: #8892b0; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; }
+        .stat-value { font-size: 24px; font-weight: bold; font-family: 'Orbitron', sans-serif; margin-top: 5px; }
+        
+        .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+
+        .terminal-header { font-family: 'Orbitron'; color: var(--arb-blue); border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+
+        input {
+            width: 100%; padding: 15px; background: #000; border: 1px solid var(--arb-blue);
+            color: var(--neon-green); border-radius: 8px; font-family: 'Orbitron'; font-size: 20px; margin-bottom: 15px; box-sizing: border-box;
+        }
+
+        .btn {
+            width: 100%; padding: 18px; border-radius: 8px; border: none; cursor: pointer;
+            font-family: 'Orbitron'; font-weight: bold; transition: 0.3s; text-transform: uppercase;
+        }
+
+        .btn-deposit { background: var(--arb-blue); color: white; margin-bottom: 10px; }
+        .btn-harvest { background: transparent; border: 1px solid var(--neon-green); color: var(--neon-green); }
+        .btn:hover { filter: brightness(1.2); box-shadow: 0 0 20px rgba(40, 160, 240, 0.4); }
+
+        .alert-box {
+            background: rgba(255, 68, 68, 0.1); border: 1px solid var(--warning-red);
+            padding: 15px; border-radius: 8px; color: var(--warning-red); font-size: 14px; margin-top: 15px;
+        }
+
+        #inflation-timer { color: var(--warning-red); font-weight: bold; }
+        .voting-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: 10px; }
+        .reward { background: var(--neon-green); color: black; }
+        .penalty { background: var(--warning-red); color: white; }
     </style>
 </head>
 <body>
 
+<nav class="navbar">
+    <div style="font-family: 'Orbitron'; font-size: 20px; color: var(--arb-blue);">RVP ECONOMIC ENGINE <span style="font-size: 10px; color: white;">V3.0</span></div>
+    <div id="walletDisplay" style="font-size: 12px; color: #8892b0;">Connecting Arbitrum...</div>
+</nav>
+
 <div class="container">
-    <div class="header">
-        <span class="badge">Arbitrum One L2</span>
-        <h1>Air Capture RVP</h1>
-        <p id="wallet-address">Συνδέστε το MetaMask</p>
-    </div>
-
-    <div class="stats">
-        <div class="stat-card">
-            <span class="stat-label">Συνολικό Air</span>
-            <span id="total-air" class="stat-value">0.00</span>
+    <div class="grid">
+        <div class="card">
+            <div class="stat-label">Live Inflation Index</div>
+            <div class="stat-value" id="inflation-val">$1,420,530</div>
+            <div style="font-size: 11px; color: var(--warning-red);">Next $1.10 Debt Cycle: <span id="timer">09s</span></div>
         </div>
-        <div class="stat-card">
-            <span class="stat-label">Το Υπόλοιπό σου</span>
-            <span id="user-eth" class="stat-value">0.00</span>
+        <div class="card">
+            <div class="stat-label">Required Air Capture (0.10)</div>
+            <div class="stat-value" id="req-air" style="color: var(--gold);">142,053 <span style="font-size: 12px;">RVP</span></div>
+            <div style="font-size: 11px;">Status: Supply Gap Detected</div>
+        </div>
+        <div class="card">
+            <div class="stat-label">Infrastructure Difficulty</div>
+            <div class="stat-value" id="diff-index">1.42x</div>
+            <div style="font-size: 11px; color: var(--arb-blue);">Based on L2 Node Expansion</div>
+        </div>
+        <div class="card">
+            <div class="stat-label">Sovereign Voting Power</div>
+            <div class="stat-value" id="svp-val">1,200 <span class="voting-badge reward">STABLE</span></div>
+            <div style="font-size: 11px;" id="voting-status">Rewards: +2.5% SVP/Harvest</div>
         </div>
     </div>
 
-    <div class="input-group">
-        <input type="number" id="depositAmount" placeholder="Ποσό σε ETH (π.χ. 0.01)" step="0.01">
-    </div>
+    <div class="main-grid">
+        <div class="card">
+            <h2 class="terminal-header">L2 ASSET SOLIDIFICATION</h2>
+            <p style="font-size: 14px; color: #8892b0;">Το πρωτόκολλο απαιτεί 0.10 RVP για κάθε $1 πληθωρισμού. Η τράπεζα απαιτεί επιστροφή 1.10. Καταθέστε ETH για να καλύψετε το κενό.</p>
+            
+            <label class="stat-label">Input Liquidity (ETH)</label>
+            <input type="number" id="depositAmount" placeholder="0.00">
+            
+            <button class="btn btn-deposit" onclick="deposit()">Execute L2 Solidification</button>
+            <button class="btn btn-harvest" onclick="harvest()">Harvest & Boost Voting Power</button>
 
-    <button class="btn-deposit" onclick="deposit()">Κατάθεση (Deposit)</button>
-    <button class="btn-harvest" onclick="harvest()">Εξαργύρωση (Harvest)</button>
+            <div class="alert-box" id="penalty-warning" style="display: none;">
+                ⚠️ ALERT: High Inactive Air detected. SVP Penalty active (-5 SVP / cycle).
+            </div>
+        </div>
 
-    <div id="status"></div>
+        <div class="card">
+            <h2 class="terminal-header">USER PORTFOLIO</h2>
+            <div class="stat-label">Your Solidified Air</div>
+            <div class="stat-value" id="userAir" style="color: var(--neon-green); font-size: 32px;">0.0000</div>
+            
+            <div style="margin-top: 20px;">
+                <div class="stat-label">System Yield (Real-time)</div>
+                <div style="font-family: 'Orbitron'; color: var(--gold);" id="yield-val">0.000012 RVP/sec</div>
+            </div>
 
-    <div class="footer">
-        Contract: <a id="contract-link" href="#" target="_blank">Προβολή στο Arbiscan</a>
+            <div style="margin-top: 30px; border-top: 1px solid #333; padding-top: 15px;">
+                <div class="stat-label">Wallet Balance</div>
+                <div id="ethBalance" style="font-family: 'Orbitron';">0.0000 ETH</div>
+                <a id="arbiscanLink" href="#" target="_blank" style="color: var(--arb-blue); text-decoration: none; font-size: 12px; display: block; margin-top: 15px;">↗ ARBISCAN L2 EXPLORER</a>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    // ΣΤΟΙΧΕΙΑ ΣΥΜΒΟΛΑΙΟΥ
     const CONTRACT_ADDRESS = "0x261174abFb883877498A9234059FfC723E920127";
     const ABI = [
         "function deposit() public payable",
         "function harvest() public",
-        "function getAirBalance(address user) public view returns (uint256)",
-        "function getTotalAir() public view returns (uint256)"
+        "function getAirAmount(address user) public view returns (uint256)",
+        "function totalAir() public view returns (uint256)"
     ];
 
     let provider, signer, contract;
+    let inflation = 1420530;
+    let svp = 1200;
+    let timer = 10;
 
     async function init() {
         if (window.ethereum) {
-            try {
-                provider = new ethers.BrowserProvider(window.ethereum);
-                signer = await provider.getSigner();
-                contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-                
-                const addr = await signer.getAddress();
-                document.getElementById('wallet-address').innerText = "Wallet: " + addr.substring(0,6) + "..." + addr.substring(38);
-                document.getElementById('contract-link').href = `https://sepolia.arbiscan.io/address/${CONTRACT_ADDRESS}`;
-                
-                // Real-time Updates
-                updateStats();
-                setInterval(updateStats, 2000); // Κάθε 2 δευτερόλεπτα λόγω Arbitrum Speed
-            } catch (err) {
-                console.error(err);
-                showStatus("Σφάλμα σύνδεσης wallet", "red");
-            }
-        } else {
-            showStatus("Παρακαλώ εγκαταστήστε το MetaMask", "orange");
+            provider = new ethers.BrowserProvider(window.ethereum);
+            signer = await provider.getSigner();
+            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+            
+            const addr = await signer.getAddress();
+            document.getElementById('walletDisplay').innerText = "L2 ADDR: " + addr.substring(0,6) + "...";
+            document.getElementById('arbiscanLink').href = `https://sepolia.arbiscan.io/address/${CONTRACT_ADDRESS}`;
+            
+            updateUI();
+            setInterval(economicCycle, 1000); // Live Economy
+            setInterval(updateUI, 5000); // Blockchain Sync
         }
     }
 
-    async function updateStats() {
-        try {
-            const totalAirRaw = await contract.getTotalAir();
-            const userAirRaw = await contract.getAirBalance(await signer.getAddress());
-            
-            // Μετατροπή από Wei σε ETH
-            document.getElementById('total-air').innerText = parseFloat(ethers.formatEther(totalAirRaw)).toFixed(4);
-            document.getElementById('user-eth').innerText = parseFloat(ethers.formatEther(userAirRaw)).toFixed(4);
-        } catch (err) {
-            console.error("Update error:", err);
+    function economicCycle() {
+        // 1. Inflation Growth
+        inflation += Math.floor(Math.random() * 100);
+        document.getElementById('inflation-val').innerText = "$" + inflation.toLocaleString();
+        
+        // 2. Required Air (0.10 ratio)
+        const reqAir = (inflation * 0.10).toFixed(0);
+        document.getElementById('req-air').innerText = reqAir.toLocaleString() + " RVP";
+
+        // 3. Timer Logic
+        timer--;
+        if (timer <= 0) {
+            timer = 10;
+            applyPenaltyCheck();
         }
+        document.getElementById('timer').innerText = (timer < 10 ? "0" : "") + timer + "s";
+
+        // 4. Difficulty Scaling (based on hypothetical node growth)
+        const difficulty = (1 + (inflation / 5000000)).toFixed(2);
+        document.getElementById('diff-index').innerText = difficulty + "x";
+    }
+
+    async function applyPenaltyCheck() {
+        const addr = await signer.getAddress();
+        const userAir = await contract.getAirAmount(addr);
+        
+        // Penalty if User has air but doesn't harvest
+        if (parseFloat(ethers.formatEther(userAir)) > 0) {
+            svp -= 5;
+            document.getElementById('penalty-warning').style.display = "block";
+            updateSVPUI("PENALTY ACTIVE", "penalty");
+        } else {
+            document.getElementById('penalty-warning').style.display = "none";
+        }
+    }
+
+    function updateSVPUI(status, badgeClass) {
+        document.getElementById('svp-val').innerHTML = svp + ` <span class="voting-badge ${badgeClass}">${status}</span>`;
+    }
+
+    async function updateUI() {
+        try {
+            const addr = await signer.getAddress();
+            const userAirRaw = await contract.getAirAmount(addr);
+            const ethBalRaw = await provider.getBalance(addr);
+
+            const userAir = ethers.formatEther(userAirRaw);
+            document.getElementById('userAir').innerText = parseFloat(userAir).toFixed(4);
+            document.getElementById('ethBalance').innerText = parseFloat(ethers.formatEther(ethBalRaw)).toFixed(4) + " ETH";
+            
+        } catch (e) { console.log(e); }
     }
 
     async function deposit() {
         const amount = document.getElementById('depositAmount').value;
-        if (!amount || amount <= 0) return showStatus("Βάλτε έγκυρο ποσό", "orange");
-
         try {
-            showStatus("Η συναλλαγή επεξεργάζεται στο Arbitrum...", "cyan");
             const tx = await contract.deposit({ value: ethers.parseEther(amount) });
             await tx.wait();
-            showStatus("Επιτυχής Κατάθεση! 🚀", "var(--primary)");
-            updateStats();
-        } catch (err) {
-            showStatus("Η συναλλαγή ακυρώθηκε", "red");
-        }
+            svp += 50; // Boost for active solidification
+            updateSVPUI("DEPOSIT BOOST", "reward");
+            updateUI();
+        } catch (e) { alert("Error: " + e.message); }
     }
 
     async function harvest() {
         try {
-            showStatus("Harvesting Air... παρακαλώ περιμένετε", "cyan");
             const tx = await contract.harvest();
             await tx.wait();
-            showStatus("Harvest Ολοκληρώθηκε! ✅", "var(--primary)");
-            updateStats();
-        } catch (err) {
-            showStatus("Σφάλμα στο Harvest", "red");
-        }
-    }
-
-    function showStatus(msg, color) {
-        const s = document.getElementById('status');
-        s.innerText = msg;
-        s.style.color = color;
+            svp += 100; // Reward for harvesting
+            updateSVPUI("HARVEST REWARD", "reward");
+            updateUI();
+        } catch (e) { alert("Error: " + e.message); }
     }
 
     window.onload = init;
 </script>
-
 </body>
 </html>
