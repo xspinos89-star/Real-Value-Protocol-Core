@@ -28,8 +28,8 @@
 <div class="dashboard">
     <header>
         <div>
-            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v9.0</span></h1>
-            <div id="walletAddr" style="font-size:0.7rem; color:var(--secondary); font-family:monospace;">0x99e09C98f0548Aba8803221157e653B82e345980</div>
+            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v9.5</span></h1>
+            <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">Waiting for connection...</div>
         </div>
         <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
     </header>
@@ -48,7 +48,7 @@
         <div class="card">
             <div class="label">Captured AIR (Debt)</div>
             <div id="airVal" class="value" style="color:var(--accent)">0.0000</div>
-            <div id="difficultyMsg" style="font-size:0.7rem; color:#888;">Saturation: 0%</div>
+            <div id="difficultyMsg" style="font-size:0.7rem; color:#888;">Saturation: 0.00%</div>
         </div>
         <div class="card">
             <div class="label">RWA Infrastructure</div>
@@ -58,7 +58,7 @@
         <div class="card" style="grid-column: span 2;">
             <div class="label">Recycling Efficiency (Activity Multiplier)</div>
             <div class="bar-container"><div id="efficiencyBar"></div></div>
-            <div id="statusMsg" class="status-box">Ready to connect...</div>
+            <div id="statusMsg" class="status-box">Connect to synchronize...</div>
         </div>
     </div>
 
@@ -75,6 +75,7 @@
 </div>
 
 <script>
+    // ΣΤΑΘΕΡΕΣ ΣΥΜΒΟΛΑΙΟΥ
     const ABI = [
         {"inputs":[],"name":"airHarvest","outputs":[],"stateMutability":"nonpayable","type":"function"},
         {"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"getVotingPower","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
@@ -83,8 +84,8 @@
         {"inputs":[],"name":"totalGlobalRWA","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
         {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"users","outputs":[{"internalType":"uint256","name":"deposit","type":"uint256"},{"internalType":"uint256","name":"physicalInfra","type":"uint256"},{"internalType":"uint256","name":"lastUpdate","type":"uint256"},{"internalType":"uint256","name":"accumulatedAir","type":"uint256"}],"stateMutability":"view","type":"function"}
     ];
-
     const CONTRACT_ADDRESS = "0x99e09C98f0548Aba8803221157e653B82e345980";
+    
     let provider, signer, contract;
 
     async function connectWallet() {
@@ -94,12 +95,18 @@
                 await provider.send("eth_requestAccounts", []);
                 signer = await provider.getSigner();
                 contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+                
                 const addr = await signer.getAddress();
-                document.getElementById('connectBtn').innerText = "Wallet Active";
+                
+                // UX: Αντικατάσταση διεύθυνσης συμβολαίου με τη διεύθυνση χρήστη
+                document.getElementById('connectBtn').style.display = "none";
+                document.getElementById('userWallet').innerText = "CONNECTED: " + addr.substring(0,6) + "..." + addr.substring(38);
+                document.getElementById('statusMsg').innerText = "SYSTEM STATUS: OPTIMAL";
+
                 loadData(addr);
                 setInterval(() => loadData(addr), 3000);
-            } catch (err) { console.error(err); }
-        } else { alert("MetaMask not found!"); }
+            } catch (err) { console.error("Sync failed", err); }
+        } else { alert("MetaMask not detected!"); }
     }
 
     async function loadData(userAddr) {
@@ -116,32 +123,31 @@
             const now = Math.floor(Date.now() / 1000);
             const timeDiff = lastUpdate > 0 ? now - lastUpdate : 0;
 
-            // 1. LOYALTY ENGINE (Dashboard-side dynamic growth)
-            let loyaltyBonus = 1 + (timeDiff * 0.0000001); // 0.00001% growth per sec
+            // 1. DYNAMIC LOYALTY ENGINE
+            let loyaltyBonus = 1 + (timeDiff * 0.0000001); 
             let currentVP = parseFloat(ethers.formatEther(vpFromContract)) * loyaltyBonus;
 
-            // 2. SATURATION FACTOR (Difficulty)
-            // Όσο αυξάνεται το globalRwa, ο ρυθμός capture μειώνεται.
+            // 2. SATURATION FACTOR (REALISTIC DIFFICULTY)
             let saturation = 1 / (1 + (globalRwa * 0.001)); 
             let saturationPercent = (1 - saturation) * 100;
 
             // 3. AIR CAPTURE LOGIC
-            let baseAirRate = (deposit * 0.1 / (365 * 24 * 3600)); // 10% annual
+            let baseAirRate = (deposit * 0.1 / (365 * 24 * 3600)); 
             let liveAir = (baseAirRate * saturation * timeDiff) + parseFloat(ethers.formatEther(userData.accumulatedAir));
 
-            // 4. EFFICIENCY & PENALTY
+            // 4. EFFICIENCY & STAGNATION PENALTY
             let efficiency = 100;
             if (liveAir > 0.015) {
                 efficiency = Math.max(0, 100 - (liveAir - 0.015) * 8000);
                 currentVP = currentVP * (efficiency / 100);
-                document.getElementById('statusMsg').innerText = "STAGNATION PENALTY ACTIVE";
+                document.getElementById('statusMsg').innerText = "WARNING: STAGNATION DETECTED";
                 document.getElementById('statusMsg').style.color = "var(--danger)";
             } else {
-                document.getElementById('statusMsg').innerText = "SYSTEM OPTIMAL - RECYCLING AT 100%";
+                document.getElementById('statusMsg').innerText = "SYSTEM STATUS: OPTIMAL - NO DEBT OVERFLOW";
                 document.getElementById('statusMsg').style.color = "var(--primary)";
             }
 
-            // UPDATE UI
+            // UI UPDATES
             document.getElementById('safeCap').innerText = deposit.toFixed(4);
             document.getElementById('vpVal').innerText = currentVP.toFixed(4);
             document.getElementById('airVal').innerText = liveAir.toFixed(8);
@@ -150,21 +156,21 @@
             document.getElementById('efficiencyBar').style.width = efficiency + "%";
             document.getElementById('loyaltyStatus').innerText = `Engine: x${loyaltyBonus.toFixed(6)}`;
             
-            // GLOBAL IMPACT
+            // GLOBAL MACRO DATA
             document.getElementById('globalAir').innerText = globalAir.toFixed(2) + " ETH";
             document.getElementById('globalRwa').innerText = globalRwa.toFixed(2) + " Units";
             document.getElementById('inflationRed').innerText = "-" + (globalRwa * 0.00001).toFixed(6) + "%";
 
-        } catch (e) { console.error("Sync error", e); }
+        } catch (e) { console.error("Blockchain sync error", e); }
     }
 
     async function harvest() {
         try {
             const tx = await contract.airHarvest();
-            document.getElementById('statusMsg').innerText = "TRANSACTION BROADCASTED...";
+            document.getElementById('statusMsg').innerText = "SOLIDIFYING ASSETS...";
             await tx.wait();
-            alert("RWA SOLIDIFIED. The air has been recycled into matter.");
-        } catch (e) { alert("Harvest failed. Low Air or Gas."); }
+            alert("RWA HARVEST SUCCESSFUL!");
+        } catch (e) { alert("Harvest failed. Check air levels or gas."); }
     }
 </script>
 </body>
