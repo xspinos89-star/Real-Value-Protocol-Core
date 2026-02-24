@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Architect v13.8</title>
+    <title>RVP Protocol | Architect v14.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
         :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
@@ -18,13 +18,12 @@
         #efficiencyBar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--danger), var(--primary)); transition: 1s; }
         .oracle-tag { position: absolute; top: 20px; left: 0; font-size: 0.65rem; color: #94a3b8; font-weight: bold; }
         .status-box { font-size: 0.9rem; font-weight: 700; padding: 15px; border-radius: 8px; background: rgba(0,0,0,0.3); margin-top: 10px; border: 1px solid rgba(255,255,255,0.1); text-align: center; color: var(--accent); }
-        .btn-main { padding: 15px; border-radius: 10px; border: none; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: 0.3s; text-transform: uppercase; color: white; }
-        .btn-deposit { background: var(--secondary); width: 150px; }
-        .btn-harvest { background: var(--primary); width: 100%; }
-        .input-eth { padding: 15px; border-radius: 10px; border: 1px solid #1e293b; background: #05070a; color: white; width: 120px; outline: none; margin-right: 10px; font-weight: bold; }
+        .btn-main { padding: 15px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; color: white; transition: 0.3s; width: 100%; }
+        .btn-deposit { background: var(--secondary); }
+        .btn-harvest { background: var(--primary); margin-top: 10px; }
+        .input-eth { padding: 12px; border-radius: 8px; border: 1px solid #1e293b; background: #000; color: white; width: 100%; margin-bottom: 10px; font-size: 1rem; text-align: center; }
         #connectBtn { padding: 12px 24px; background: var(--secondary); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; }
         .impact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; text-align: center; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 10px; }
-        .action-row { display: flex; align-items: center; margin-top: 10px; gap: 10px; }
     </style>
 </head>
 <body>
@@ -32,10 +31,10 @@
 <div class="dashboard">
     <header>
         <div>
-            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v13.8</span></h1>
-            <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">STATUS: LIVE_NODE_READY</div>
+            <h1>RVP Protocol <span style="color:var(--primary)">v14.0</span></h1>
+            <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace;">ARCHITECT_NODE_READY</div>
         </div>
-        <button id="connectBtn" onclick="connectWallet()">CONNECT WALLET</button>
+        <button id="connectBtn" onclick="connectWallet()">CONNECT ARCHITECT</button>
     </header>
 
     <div class="grid">
@@ -45,43 +44,38 @@
             <div style="font-size:0.7rem; color:var(--primary)">Anti-Inflationary Base</div>
         </div>
         <div class="card">
-            <div class="label">Sovereign Voting Power</div>
+            <div class="label">Voting Power</div>
             <div id="vpVal" class="value">0.0000</div>
             <div style="font-size:0.75rem; color:#888;">Time Bonus Active</div>
         </div>
         <div class="card">
-            <div class="label">Captured Market Air (Debt)</div>
+            <div class="label">Market Air</div>
             <div id="airVal" class="value" style="color:var(--accent)">0.0000</div>
             <div id="satLabel" style="font-size:0.7rem; color:#888;">Saturation: 0.00%</div>
         </div>
         <div class="card">
-            <div class="label">Global Contribution (RWA)</div>
+            <div class="label">RWA Units</div>
             <div id="rwaVal" class="value" style="color:var(--primary)">0.0000</div>
-            <div style="font-size:0.7rem;">Solidified Infrastructure</div>
+            <div style="font-size:0.7rem;">Global Infrastructure</div>
         </div>
         <div class="card" style="grid-column: span 2;">
             <div class="label">Solidification Efficiency</div>
             <div class="bar-container">
                 <div id="efficiencyBar"></div>
                 <div class="oracle-tag">✦ ORACLE: 4.25%</div>
-                <div id="debtTag" style="position:absolute; top:20px; right:0; font-size:0.65rem; color:var(--primary); font-weight:bold;">DEBT: SOLIDIFIED ✓</div>
             </div>
-            <div id="statusMsg" class="status-box">SYSTEM READY</div>
+            <div id="statusMsg" class="status-box">SYSTEM SYNCED WITH MAINNET</div>
         </div>
     </div>
 
-    <div id="actions" style="display:none; margin-top: 30px;">
-        <div class="action-row">
-            <input type="number" id="ethAmount" class="input-eth" placeholder="0.1" step="0.01">
-            <button class="btn-main btn-deposit" onclick="deposit()">Deposit</button>
-        </div>
-        <div style="margin-top:20px;">
-            <button class="btn-main btn-harvest" onclick="harvest()">Execute Solidification</button>
-        </div>
+    <div id="actions" style="display:none; margin-top: 30px; max-width: 400px; margin-left: auto; margin-right: auto;">
+        <input type="number" id="ethAmount" class="input-eth" placeholder="Amount (e.g. 0.1)">
+        <button class="btn-main btn-deposit" onclick="executeDeposit()">DEPOSIT CAPITAL</button>
+        <button class="btn-main btn-harvest" onclick="executeHarvest()">EXECUTE SOLIDIFICATION</button>
         
         <div class="impact-grid">
-            <div><div class="label" style="font-size:0.6rem;">Neutralized</div><div id="impact1" style="font-weight:bold;">0.00 ETH</div></div>
-            <div><div class="label" style="font-size:0.6rem;">Infrastructure</div><div id="impact2" style="font-weight:bold;">0.00 Units</div></div>
+            <div><div class="label" style="font-size:0.6rem;">Neutralized</div><div id="impact1" style="font-weight:bold;">0.00</div></div>
+            <div><div class="label" style="font-size:0.6rem;">Infrastructure</div><div id="impact2" style="font-weight:bold;">0.00</div></div>
             <div><div class="label" style="font-size:0.6rem;">Reduction</div><div id="impact3" style="color:var(--primary); font-weight:bold;">-0.00%</div></div>
         </div>
     </div>
@@ -89,101 +83,87 @@
 
 <script>
     const ABI = [
-        {"inputs":[],"name":"deposit","outputs":[],"stateMutability":"payable","type":"function"},
-        {"inputs":[],"name":"airHarvest","outputs":[],"stateMutability":"nonpayable","type":"function"},
-        {"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"getVotingPower","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-        {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"users","outputs":[{"internalType":"uint256","name":"deposit","type":"uint256"},{"internalType":"uint256","name":"physicalInfra","type":"uint256"},{"internalType":"uint256","name":"lastUpdate","type":"uint256"},{"internalType":"uint256","name":"accumulatedAir","type":"uint256"}],"stateMutability":"view","type":"function"}
+        "function deposit() payable",
+        "function airHarvest()",
+        "function getVotingPower(address _user) view returns (uint256)",
+        "function users(address) view returns (uint256 deposit, uint256 physicalInfra, uint256 lastUpdate, uint256 accumulatedAir)"
     ];
     const CONTRACT_ADDRESS = "0x99e09C98f0548Aba8803221157e653B82e345980";
-    const ARCHITECT_ADDR = "0x42C56AAa94359307F4f5eD603c802Cb1a0F67691"; 
+    const ARCHITECT_ADDR = "0x42C56AAa94359307F4f5eD603c802Cb1a0F67691";
 
-    let provider, signer, contract;
+    let provider;
 
     async function init() {
         if (window.ethereum) {
-            const tempProvider = new ethers.BrowserProvider(window.ethereum);
-            const readContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, tempProvider);
+            provider = new ethers.BrowserProvider(window.ethereum);
+            const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+            
             setInterval(async () => {
                 try {
-                    const userData = await readContract.users(ARCHITECT_ADDR);
-                    const vpRaw = await readContract.getVotingPower(ARCHITECT_ADDR);
-                    updateUI(userData, vpRaw);
-                } catch (e) { }
+                    const userData = await contract.users(ARCHITECT_ADDR);
+                    const vpRaw = await contract.getVotingPower(ARCHITECT_ADDR);
+                    
+                    const dep = parseFloat(ethers.formatEther(userData[0]));
+                    const rwa = parseFloat(ethers.formatEther(userData[1]));
+                    const last = Number(userData[2]);
+                    const acc = parseFloat(ethers.formatEther(userData[3]));
+
+                    if (dep > 0 || rwa > 0) {
+                        const now = Math.floor(Date.now() / 1000);
+                        const initialDebt = dep * 0.10;
+                        let debtBase = (acc === 0 && rwa > 0) ? 0 : initialDebt;
+                        let liveAir = debtBase + (dep * 0.0425 * (now - last) / 31536000) + acc;
+
+                        document.getElementById('safeCap').innerText = dep.toFixed(4);
+                        document.getElementById('airVal').innerText = liveAir.toFixed(10);
+                        document.getElementById('rwaVal').innerText = rwa.toFixed(4);
+                        document.getElementById('vpVal').innerText = parseFloat(ethers.formatEther(vpRaw)).toFixed(6);
+                        
+                        let sat = (liveAir / initialDebt) * 100;
+                        document.getElementById('efficiencyBar').style.width = Math.max(0, 100 - (sat > 100 ? (sat-100)*5 : 0)) + "%";
+                        document.getElementById('satLabel').innerText = "Saturation: " + sat.toFixed(2) + "%";
+                        document.getElementById('impact1').innerText = (acc + rwa).toFixed(4) + " ETH";
+                        document.getElementById('impact2').innerText = rwa.toFixed(4) + " Units";
+                        document.getElementById('impact3').innerText = "-" + (rwa * 0.21).toFixed(4) + "%";
+                    }
+                } catch (e) { console.log("Sync..."); }
             }, 1000);
         }
     }
 
-    function updateUI(userData, vpRaw) {
-        const dep = parseFloat(ethers.formatEther(userData.deposit));
-        const rwa = parseFloat(ethers.formatEther(userData.physicalInfra));
-        const acc = parseFloat(ethers.formatEther(userData.accumulatedAir));
-        const last = Number(userData.lastUpdate);
-
-        if (dep > 0 || rwa > 0) {
-            const now = Math.floor(Date.now() / 1000);
-            const initialDebt = dep * 0.10;
-            let debtBase = (acc === 0 && rwa > 0) ? 0 : initialDebt;
-            let liveAir = debtBase + (dep * 0.0425 * (now - last) / 31536000) + acc;
-
-            document.getElementById('safeCap').innerText = dep.toFixed(4);
-            document.getElementById('airVal').innerText = liveAir.toFixed(10);
-            document.getElementById('rwaVal').innerText = rwa.toFixed(4);
-            document.getElementById('vpVal').innerText = parseFloat(ethers.formatEther(vpRaw)).toFixed(6);
-            
-            let sat = (liveAir / initialDebt) * 100;
-            let eff = sat > 100 ? Math.max(0, 100 - (sat - 100) * 10) : 100;
-            document.getElementById('efficiencyBar').style.width = eff + "%";
-            document.getElementById('satLabel').innerText = "Saturation: " + sat.toFixed(2) + "%";
-            
-            document.getElementById('debtTag').innerText = (liveAir > initialDebt) ? "DEBT: ACCUMULATING ⚠" : "DEBT: SOLIDIFIED ✓";
-            document.getElementById('debtTag').style.color = (liveAir > initialDebt) ? "var(--accent)" : "var(--primary)";
-
-            document.getElementById('impact1').innerText = (acc + rwa).toFixed(4) + " ETH";
-            document.getElementById('impact2').innerText = rwa.toFixed(4) + " Units";
-            document.getElementById('impact3').innerText = "-" + (rwa * 0.21).toFixed(4) + "%";
+    async function connectWallet() {
+        if (window.ethereum) {
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+            document.getElementById('connectBtn').style.display = "none";
+            document.getElementById('actions').style.display = "block";
         }
     }
 
-    async function connectWallet() {
-        if (!window.ethereum) return alert("Install MetaMask");
-        provider = new ethers.BrowserProvider(window.ethereum);
-        const accounts = await provider.send("eth_requestAccounts", []);
-        signer = await provider.getSigner();
-        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-        document.getElementById('connectBtn').style.display = "none";
-        document.getElementById('actions').style.display = "block";
-        document.getElementById('statusMsg').innerText = "ARCHITECT AUTHENTICATED";
-    }
-
-    async function deposit() {
+    async function executeDeposit() {
         try {
-            const val = document.getElementById('ethAmount').value;
-            if (!val || val <= 0) return alert("Βάλε ποσό ETH");
+            const amount = document.getElementById('ethAmount').value;
+            if (!amount) return;
             
-            // Re-sync contract for safety
-            const tempProv = new ethers.BrowserProvider(window.ethereum);
-            const tempSigner = await tempProv.getSigner();
-            const writeContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, tempSigner);
-
-            const tx = await writeContract.deposit({ value: ethers.parseEther(val) });
-            document.getElementById('statusMsg').innerText = "WAITING FOR BLOCKCHAIN...";
+            const tempProvider = new ethers.BrowserProvider(window.ethereum);
+            const signer = await tempProvider.getSigner();
+            const writeContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+            
+            const tx = await writeContract.deposit({ value: ethers.parseEther(amount) });
+            document.getElementById('statusMsg').innerText = "TRANSACTION SUBMITTED...";
             await tx.wait();
             location.reload();
-        } catch (e) { 
-            console.error(e);
-            alert("Transaction Failed. Check console (F12)"); 
-        }
+        } catch (e) { alert("Check MetaMask Confirmation"); }
     }
 
-    async function harvest() {
+    async function executeHarvest() {
         try {
-            const tempProv = new ethers.BrowserProvider(window.ethereum);
-            const tempSigner = await tempProv.getSigner();
-            const writeContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, tempSigner);
+            const tempProvider = new ethers.BrowserProvider(window.ethereum);
+            const signer = await tempProvider.getSigner();
+            const writeContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
             const tx = await writeContract.airHarvest();
             await tx.wait();
             location.reload();
-        } catch (e) { alert("Harvest Failed"); }
+        } catch (e) { alert("Check MetaMask Confirmation"); }
     }
 
     init();
