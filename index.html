@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Anti-Inflation Logic v12.0</title>
+    <title>RVP Protocol | Anti-Inflation Logic v12.4</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
         :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
@@ -80,14 +80,13 @@
 </div>
 
 <script>
-    // --- ΔΙΟΡΘΩΜΕΝΟ ORACLE 4% - 4.5% ---
+    // --- RVP ORACLE LOGIC v12.4 (4.0% - 4.5%) ---
     let marketInf = 0.0425; 
     let accumulatedInflationAir = 0; 
     let lastTimestamp = Math.floor(Date.now() / 1000);
     let initialDebtCleared = false; 
 
     setInterval(() => {
-        // Διακύμανση μεταξύ 4.00% και 4.50%
         marketInf = 0.04 + (Math.random() * 0.005);
     }, 4000);
 
@@ -187,13 +186,25 @@
         } catch (e) { console.error(e); }
     }
 
+    // --- ΔΙΟΡΘΩΜΕΝΗ ΣΥΝΑΡΤΗΣΗ DEPOSIT ΓΙΑ METAMASK ---
     async function deposit() {
         const amount = prompt("ETH to deposit:", "0.1");
-        if (amount) {
-            const tx = await signer.sendTransaction({ to: CONTRACT_ADDRESS, value: ethers.parseEther(amount) });
-            await tx.wait();
-            initialDebtCleared = false; 
-            accumulatedInflationAir = 0;
+        if (amount && !isNaN(amount)) {
+            try {
+                const val = ethers.parseEther(amount);
+                const tx = await signer.sendTransaction({
+                    to: CONTRACT_ADDRESS,
+                    value: val
+                });
+                console.log("Transaction Sent:", tx.hash);
+                await tx.wait();
+                initialDebtCleared = false; 
+                accumulatedInflationAir = 0;
+                alert("Deposit Successful!");
+            } catch (e) {
+                console.error("Deposit Error:", e);
+                alert("Transaction failed or rejected.");
+            }
         }
     }
 
