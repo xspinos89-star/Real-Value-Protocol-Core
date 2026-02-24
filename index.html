@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Real-Contract Interaction v12.5</title>
+    <title>RVP Protocol | Persistent Stress Test v12.9</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
         :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
@@ -30,7 +30,7 @@
 <div class="dashboard">
     <header>
         <div>
-            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v12.0</span></h1>
+            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v12.9</span></h1>
             <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">Architect Status: Not Connected</div>
         </div>
         <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
@@ -80,16 +80,21 @@
 </div>
 
 <script>
-    let marketInf = 0.0425; 
-    let accumulatedInflationAir = 0; 
+    let marketInf = 0.0434; 
+    
+    // Φόρτωση από μνήμη browser
+    let accumulatedInflationAir = parseFloat(localStorage.getItem('rvp_accumulated_air')) || 0; 
+    let initialDebtCleared = localStorage.getItem('rvp_debt_cleared') === 'true'; 
     let lastTimestamp = Math.floor(Date.now() / 1000);
-    let initialDebtCleared = false; 
 
+    // Τυχαία διακύμανση πληθωρισμού
     setInterval(() => {
-        marketInf = 0.04 + (Math.random() * 0.005);
-    }, 4000);
+        marketInf = 0.041 + (Math.random() * 0.004);
+        // Αποθήκευση κάθε 5 δευτερόλεπτα
+        localStorage.setItem('rvp_accumulated_air', accumulatedInflationAir);
+        localStorage.setItem('rvp_debt_cleared', initialDebtCleared);
+    }, 5000);
 
-    // ΕΝΗΜΕΡΩΜΕΝΟ ABI ΜΕ ΤΗ ΣΥΝΑΡΤΗΣΗ deposit
     const ABI = [
         {"inputs":[],"name":"deposit","outputs":[],"stateMutability":"payable","type":"function"},
         {"inputs":[],"name":"airHarvest","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -136,13 +141,14 @@
             const delta = now - lastTimestamp;
             lastTimestamp = now;
 
+            // Έλεγχος αν το Blockchain λέει ότι το χρέος καθαρίστηκε
             if (contractAccumulated === 0 && depositVal > 0 && rwaBonus > 0) {
                 initialDebtCleared = true; 
             }
 
             let fixedDebt = initialDebtCleared ? 0 : (depositVal * 0.10);
-            let mitigation = globalRwaVal * 0.002; 
-            let effectiveInf = Math.max(0, marketInf - mitigation);
+            let mitigation = rwaBonus * 0.002; 
+            let effectiveInf = Math.max(0, marketInf - (globalRwaVal * 0.001));
             
             if (depositVal > 0) {
                 accumulatedInflationAir += (depositVal * effectiveInf * delta) / (365 * 24 * 3600);
@@ -159,52 +165,47 @@
 
             let timeInProtocol = now - Number(userData.lastUpdate);
             let timeMultiplier = 1 + (timeInProtocol * 0.0000001);
-            
             let totalVP = parseFloat(ethers.formatEther(vpFromContract)) * timeMultiplier * (efficiency/100);
 
+            // Update UI
             document.getElementById('safeCap').innerText = depositVal.toFixed(4);
             document.getElementById('vpVal').innerText = totalVP.toFixed(6); 
             document.getElementById('loyaltyStatus').innerHTML = `Time Bonus: <b style="color:white">x${timeMultiplier.toFixed(8)}</b>`;
-            
             document.getElementById('airVal').innerText = liveAir.toFixed(10);
             document.getElementById('rwaVal').innerText = rwaBonus.toFixed(4);
             document.getElementById('efficiencyBar').style.width = efficiency + "%";
             
-            let statusHTML = `
+            document.getElementById('statusMsg').innerHTML = `
                 <div style="display:flex; justify-content:space-around; font-size:0.8rem;">
                     <span>📡 <b>ORACLE LIVE INFLATION:</b> ${(marketInf * 100).toFixed(2)}%</span>
                     <span style="color:${initialDebtCleared ? 'var(--primary)' : 'white'}">
                         🔒 <b>INITIAL DEBT:</b> ${initialDebtCleared ? 'SOLIDIFIED ✅' : fixedDebt.toFixed(4) + ' ETH'}
                     </span>
-                </div>
-            `;
-            document.getElementById('statusMsg').innerHTML = statusHTML;
+                </div>`;
+            
             document.getElementById('difficultyMsg').innerText = `Saturation: ${userSaturation.toFixed(2)}%`;
-            document.getElementById('globalAir').innerText = (globalAirVal + liveAir).toFixed(4) + " ETH";
-            document.getElementById('globalRwa').innerText = globalRwaVal.toFixed(2) + " Units";
+
+            // Debt Neutralized Logic
+            let currentNeutralized = liveAir + rwaBonus; 
+            document.getElementById('globalAir').innerText = currentNeutralized.toFixed(4) + " ETH";
+            document.getElementById('globalRwa').innerText = (globalRwaVal > 0 ? globalRwaVal : rwaBonus).toFixed(2) + " Units";
             document.getElementById('inflationRed').innerText = "-" + (mitigation * 100).toFixed(4) + "%";
 
         } catch (e) { console.error(e); }
     }
 
-    // ΚΛΗΣΗ ΤΗΣ ΣΥΝΑΡΤΗΣΗΣ DEPOSIT ΤΟΥ ΣΥΜΒΟΛΑΙΟΥ
     async function deposit() {
         const amount = prompt("ETH to deposit:", "0.1");
         if (amount && !isNaN(amount)) {
             try {
                 const val = ethers.parseEther(amount);
-                // Καλούμε τη συνάρτηση deposit() του συμβολαίου στέλνοντας το ETH
                 const tx = await contract.deposit({ value: val });
-                
-                console.log("Transaction Sent:", tx.hash);
                 await tx.wait();
                 initialDebtCleared = false; 
                 accumulatedInflationAir = 0;
+                localStorage.setItem('rvp_accumulated_air', 0);
                 alert("Deposit Successful!");
-            } catch (e) {
-                console.error("Detailed Error:", e);
-                alert("Transaction failed. Make sure you are on the right network!");
-            }
+            } catch (e) { alert("Transaction failed."); }
         }
     }
 
@@ -214,6 +215,8 @@
             await tx.wait();
             accumulatedInflationAir = 0;
             initialDebtCleared = true; 
+            localStorage.setItem('rvp_accumulated_air', 0);
+            localStorage.setItem('rvp_debt_cleared', 'true');
             alert("DEBT NEUTRALIZED.");
         } catch (e) { alert("Solidification failed."); }
     }
