@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Anti-Inflation Logic v12.4</title>
+    <title>RVP Protocol | Real-Contract Interaction v12.5</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
         :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
@@ -80,7 +80,6 @@
 </div>
 
 <script>
-    // --- RVP ORACLE LOGIC v12.4 (4.0% - 4.5%) ---
     let marketInf = 0.0425; 
     let accumulatedInflationAir = 0; 
     let lastTimestamp = Math.floor(Date.now() / 1000);
@@ -90,7 +89,9 @@
         marketInf = 0.04 + (Math.random() * 0.005);
     }, 4000);
 
+    // ΕΝΗΜΕΡΩΜΕΝΟ ABI ΜΕ ΤΗ ΣΥΝΑΡΤΗΣΗ deposit
     const ABI = [
+        {"inputs":[],"name":"deposit","outputs":[],"stateMutability":"payable","type":"function"},
         {"inputs":[],"name":"airHarvest","outputs":[],"stateMutability":"nonpayable","type":"function"},
         {"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"getVotingPower","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
         {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"users","outputs":[{"internalType":"uint256","name":"deposit","type":"uint256"},{"internalType":"uint256","name":"physicalInfra","type":"uint256"},{"internalType":"uint256","name":"lastUpdate","type":"uint256"},{"internalType":"uint256","name":"accumulatedAir","type":"uint256"}],"stateMutability":"view","type":"function"},
@@ -186,24 +187,23 @@
         } catch (e) { console.error(e); }
     }
 
-    // --- ΔΙΟΡΘΩΜΕΝΗ ΣΥΝΑΡΤΗΣΗ DEPOSIT ΓΙΑ METAMASK ---
+    // ΚΛΗΣΗ ΤΗΣ ΣΥΝΑΡΤΗΣΗΣ DEPOSIT ΤΟΥ ΣΥΜΒΟΛΑΙΟΥ
     async function deposit() {
         const amount = prompt("ETH to deposit:", "0.1");
         if (amount && !isNaN(amount)) {
             try {
                 const val = ethers.parseEther(amount);
-                const tx = await signer.sendTransaction({
-                    to: CONTRACT_ADDRESS,
-                    value: val
-                });
+                // Καλούμε τη συνάρτηση deposit() του συμβολαίου στέλνοντας το ETH
+                const tx = await contract.deposit({ value: val });
+                
                 console.log("Transaction Sent:", tx.hash);
                 await tx.wait();
                 initialDebtCleared = false; 
                 accumulatedInflationAir = 0;
                 alert("Deposit Successful!");
             } catch (e) {
-                console.error("Deposit Error:", e);
-                alert("Transaction failed or rejected.");
+                console.error("Detailed Error:", e);
+                alert("Transaction failed. Make sure you are on the right network!");
             }
         }
     }
