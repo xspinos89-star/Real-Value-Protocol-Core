@@ -80,14 +80,16 @@
 </div>
 
 <script>
-    let marketInf = 0.0825; 
+    // --- ΔΙΟΡΘΩΜΕΝΟ ORACLE 4% - 4.5% ---
+    let marketInf = 0.0425; 
     let accumulatedInflationAir = 0; 
     let lastTimestamp = Math.floor(Date.now() / 1000);
     let initialDebtCleared = false; 
 
     setInterval(() => {
-        marketInf = parseFloat((0.08 + (Math.random() * 0.02)).toFixed(4));
-    }, 5000);
+        // Διακύμανση μεταξύ 4.00% και 4.50%
+        marketInf = 0.04 + (Math.random() * 0.005);
+    }, 4000);
 
     const ABI = [
         {"inputs":[],"name":"airHarvest","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -134,7 +136,6 @@
             const delta = now - lastTimestamp;
             lastTimestamp = now;
 
-            // Debt Reset Logic
             if (contractAccumulated === 0 && depositVal > 0 && rwaBonus > 0) {
                 initialDebtCleared = true; 
             }
@@ -156,16 +157,13 @@
                 efficiency = Math.max(0, 100 - (userSaturation - 100) * 10);
             }
 
-            // VOTING POWER LOGIC: Base Power (from Contract) * Time Multiplier * Efficiency
-            // Η βάση vpFromContract αυξάνεται αυτόματα όταν προσθέτεις κατάθεση στο blockchain.
             let timeInProtocol = now - Number(userData.lastUpdate);
             let timeMultiplier = 1 + (timeInProtocol * 0.0000001);
             
             let totalVP = parseFloat(ethers.formatEther(vpFromContract)) * timeMultiplier * (efficiency/100);
 
-            // UI UPDATES
-            document.getElementById('safeCap').innerText = depositVal.toFixed(4); // Fixed ETH
-            document.getElementById('vpVal').innerText = totalVP.toFixed(6); // Dynamic Power
+            document.getElementById('safeCap').innerText = depositVal.toFixed(4);
+            document.getElementById('vpVal').innerText = totalVP.toFixed(6); 
             document.getElementById('loyaltyStatus').innerHTML = `Time Bonus: <b style="color:white">x${timeMultiplier.toFixed(8)}</b>`;
             
             document.getElementById('airVal').innerText = liveAir.toFixed(10);
