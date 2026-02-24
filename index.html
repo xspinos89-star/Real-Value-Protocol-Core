@@ -31,7 +31,7 @@
     <header>
         <div>
             <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v12.9</span></h1>
-            <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">Architect Status: Not Connected</div>
+            <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">Status: Initializing...</div>
         </div>
         <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
     </header>
@@ -60,7 +60,7 @@
         <div class="card" style="grid-column: span 2;">
             <div class="label">Solidification Efficiency</div>
             <div class="bar-container"><div id="efficiencyBar"></div></div>
-            <div id="statusMsg" class="status-box">INITIALIZING...</div>
+            <div id="statusMsg" class="status-box">SEARCHING FOR ARCHITECT...</div>
         </div>
     </div>
 
@@ -91,37 +91,43 @@
     ];
     const CONTRACT_ADDRESS = "0x99e09C98f0548Aba8803221157e653B82e345980";
     let provider, signer, contract;
+    let currentArchitect = "0x42C56AAa94359307F4f5eD603c802Cb1a0F67691"; // Η διεύθυνσή σου από το screenshot
 
+    // Oracle Simulation
     setInterval(() => { marketInf = 0.041 + (Math.random() * 0.004); }, 5000);
+
+    // Αυτόματη εκκίνηση για Read-Only (για Chrome κινητού)
+    window.addEventListener('load', async () => {
+        // Χρήση public RPC για να βλέπουμε δεδομένα ακόμα και χωρίς wallet
+        provider = new ethers.JsonRpcProvider("https://rpc.ankr.com/eth"); 
+        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+        initSync();
+    });
 
     async function connectWallet() {
         if (window.ethereum) {
             try {
-                // Χρήση BrowserProvider για συμβατότητα με ethers v6
-                provider = new ethers.BrowserProvider(window.ethereum);
-                const accounts = await provider.send("eth_requestAccounts", []);
-                signer = await provider.getSigner();
+                const web3Provider = new ethers.BrowserProvider(window.ethereum);
+                const accounts = await web3Provider.send("eth_requestAccounts", []);
+                signer = await web3Provider.getSigner();
                 contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-                
-                const addr = accounts[0];
+                currentArchitect = accounts[0];
                 document.getElementById('connectBtn').style.display = "none";
                 document.getElementById('depBtn').style.display = "block";
                 document.getElementById('harvBtn').style.display = "block";
-                document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + addr;
-                
-                // Άμεση κλήση για κινητά
-                await loadData(addr);
-                // Loop
-                setInterval(() => loadData(addr), 1000);
-            } catch (err) { alert("Connection Error: " + err.message); }
+                document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + currentArchitect;
+            } catch (err) { console.error(err); }
         } else {
             window.location.href = "https://metamask.app.link/dapp/" + window.location.href.replace(/^https?:\/\//, '');
         }
     }
 
+    function initSync() {
+        setInterval(() => loadData(currentArchitect), 1000);
+    }
+
     async function loadData(userAddr) {
         try {
-            if (!contract) return;
             const userData = await contract.users(userAddr);
             const gRwa = await contract.totalGlobalRWA();
             const vpFromContract = await contract.getVotingPower(userAddr);
@@ -132,16 +138,16 @@
             const rwaBonus = parseFloat(ethers.formatEther(userData.physicalInfra));
             const lastUpdate = Number(userData.lastUpdate);
 
-            // Αν δεν έχει γίνει ακόμα η πρώτη φόρτωση, δείξε syncing
             if (depositVal === 0 && rwaBonus === 0) {
-                document.getElementById('statusMsg').innerText = "WAITING FOR BLOCKCHAIN DATA...";
+                document.getElementById('statusMsg').innerText = "ARCHITECT NOT FOUND ON-CHAIN";
                 return;
             }
 
             const now = Math.floor(Date.now() / 1000);
             const timeInProtocol = now - lastUpdate;
-            const initialDebtCleared = (contractAccumulated === 0 && rwaBonus > 0);
             
+            // Η αλήθεια του Blockchain:
+            const initialDebtCleared = (contractAccumulated === 0 && rwaBonus > 0);
             let fixedDebt = initialDebtCleared ? 0 : (depositVal * 0.10);
             let liveInflationAir = (depositVal * 0.0425 * timeInProtocol) / 31536000;
             let liveAir = fixedDebt + contractAccumulated + liveInflationAir;
@@ -167,26 +173,32 @@
             document.getElementById('globalAir').innerText = (liveAir + rwaBonus).toFixed(4) + " ETH";
             document.getElementById('globalRwa').innerText = globalRwaVal.toFixed(2) + " Units";
             document.getElementById('inflationRed').innerText = "-" + (rwaBonus * 0.002 * 100).toFixed(4) + "%";
+            
+            if (userAddr === accounts[0]) {
+                document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + userAddr;
+            } else {
+                document.getElementById('userWallet').innerText = "VIEWING ARCHITECT: " + userAddr;
+            }
 
-        } catch (e) { console.log("Silent sync..."); }
+        } catch (e) { }
     }
 
     async function deposit() {
+        if (!signer) return alert("Connect Wallet first!");
         const amount = prompt("ETH to deposit:", "0.1");
         if (amount && !isNaN(amount)) {
             try {
                 const tx = await contract.deposit({ value: ethers.parseEther(amount) });
                 await tx.wait();
-                alert("Deposit Successful!");
             } catch (e) { alert("Transaction failed."); }
         }
     }
 
     async function harvest() {
+        if (!signer) return alert("Connect Wallet first!");
         try {
             const tx = await contract.airHarvest();
             await tx.wait();
-            alert("DEBT NEUTRALIZED.");
         } catch (e) { alert("Solidification failed."); }
     }
 </script>
