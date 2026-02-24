@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Persistent Stress Test v12.9.10</title>
+    <title>RVP Protocol | Persistent Stress Test v12.9.14</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
         :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
@@ -30,8 +30,8 @@
 <div class="dashboard">
     <header>
         <div>
-            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v12.9.10</span></h1>
-            <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">Status: Initializing...</div>
+            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v12.9.14</span></h1>
+            <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">System State: Synchronizing Oracle...</div>
         </div>
         <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
     </header>
@@ -45,7 +45,7 @@
         <div class="card">
             <div class="label">Sovereign Voting Power</div>
             <div id="vpVal" class="value">0.0000</div>
-            <div id="loyaltyStatus" style="font-size:0.75rem;">Time Bonus: x1.0000000</div>
+            <div id="loyaltyStatus" style="font-size:0.75rem;">Time Bonus Active</div>
         </div>
         <div class="card">
             <div class="label">Captured Market Air (Debt)</div>
@@ -53,79 +53,82 @@
             <div id="difficultyMsg" style="font-size:0.7rem; color:#888;">Saturation: 0.00%</div>
         </div>
         <div class="card">
-            <div class="label">Global Contribution (RWA)</div>
+            <div class="label">Infrastructure (RWA)</div>
             <div id="rwaVal" class="value" style="color:var(--primary)">0.0000</div>
-            <div style="font-size:0.7rem;">Solidified Infrastructure Units</div>
+            <div style="font-size:0.7rem;">Irreversible Platform Units</div>
         </div>
         <div class="card" style="grid-column: span 2;">
             <div class="label">Solidification Efficiency</div>
             <div class="bar-container"><div id="efficiencyBar"></div></div>
-            <div id="statusMsg" class="status-box">SEARCHING FOR ARCHITECT...</div>
+            <div id="statusMsg" class="status-box">MONITORING ARCHITECT ACTIVITY...</div>
         </div>
     </div>
 
     <div class="button-group">
-        <button id="depBtn" class="btn-main btn-deposit" onclick="deposit()" style="display:none;">Deposit Capital</button>
-        <button id="harvBtn" class="btn-main btn-harvest" onclick="harvest()" style="display:none;">Execute Solidification</button>
+        <button id="depBtn" class="btn-main btn-deposit" onclick="deposit()" style="display:none;">Adjust Capital</button>
+        <button id="harvBtn" class="btn-main btn-harvest" onclick="harvest()" style="display:none;">Solidify Air</button>
     </div>
 
     <div style="margin-top:40px; background: rgba(59, 130, 246, 0.05); padding: 30px; border-radius: 20px; border: 1px solid #1e293b;">
-        <h2 style="text-align:center; color:var(--secondary); margin-top:0; font-size: 1.1rem;">MACRO-ECONOMIC IMPACT ANALYSIS</h2>
+        <h2 style="text-align:center; color:var(--secondary); margin-top:0; font-size: 1.1rem;">REAL-TIME MACRO ORACLE</h2>
         <div class="impact-stats">
-            <div><div class="label">Debt Neutralized</div><div id="globalAir" class="value" style="font-size:1.3rem;">0.00 ETH</div></div>
-            <div><div class="label">System Infrastructure</div><div id="globalRwa" class="value" style="font-size:1.3rem;">0.00 Units</div></div>
-            <div><div class="label">Inflation Reduction</div><div id="inflationRed" class="value" style="font-size:1.3rem; color:var(--primary)">-0.00%</div></div>
+            <div><div class="label">Market Inflation</div><div id="oracleVal" class="value" style="font-size:1.3rem;">0.00%</div></div>
+            <div><div class="label">Global RWA Base</div><div id="globalRwa" class="value" style="font-size:1.3rem;">0.00 Units</div></div>
+            <div><div class="label">System Integrity</div><div id="integrityVal" class="value" style="font-size:1.3rem; color:var(--primary)">SOLID</div></div>
         </div>
     </div>
 </div>
 
 <script>
-    let currentMarketInflation = 0.0445; 
-    function syncMarketOracle() {
-        currentMarketInflation = 0.041 + (Math.random() * 0.008);
+    let currentMarketInflation = 0.0450; 
+    
+    async function syncMarketOracle() {
+        try {
+            const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true');
+            const data = await response.json();
+            const volatility = Math.abs(data.ethereum.usd_24h_change);
+            // Ρεαλιστικός πληθωρισμός βασισμένος στη μεταβλητότητα της αγοράς
+            currentMarketInflation = (0.035 + (volatility / 100)).toFixed(4);
+            document.getElementById('oracleVal').innerText = (currentMarketInflation * 100).toFixed(2) + "%";
+        } catch (e) {
+            currentMarketInflation = 0.0450;
+        }
     }
-    setInterval(syncMarketOracle, 300000); 
+    setInterval(syncMarketOracle, 60000); 
 
     const ABI = [
         {"inputs":[],"name":"deposit","outputs":[],"stateMutability":"payable","type":"function"},
         {"inputs":[],"name":"airHarvest","outputs":[],"stateMutability":"nonpayable","type":"function"},
         {"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"getVotingPower","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
         {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"users","outputs":[{"internalType":"uint256","name":"deposit","type":"uint256"},{"internalType":"uint256","name":"physicalInfra","type":"uint256"},{"internalType":"uint256","name":"lastUpdate","type":"uint256"},{"internalType":"uint256","name":"accumulatedAir","type":"uint256"}],"stateMutability":"view","type":"function"},
-        {"inputs":[],"name":"totalGlobalRWA","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-        {"inputs":[],"name":"totalGlobalAir","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+        {"inputs":[],"name":"totalGlobalRWA","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
     ];
     const CONTRACT_ADDRESS = "0x99e09C98f0548Aba8803221157e653B82e345980";
     let provider, signer, contract;
     let currentArchitect = "0x42C56AAa94359307F4f5eD603c802Cb1a0F67691";
 
     window.addEventListener('load', async () => {
+        await syncMarketOracle();
         if (window.ethereum) {
             provider = new ethers.BrowserProvider(window.ethereum);
         } else {
             provider = new ethers.JsonRpcProvider("https://sepolia-rollup.arbitrum.io/rpc");
         }
         contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
-        initSync();
+        setInterval(() => loadData(currentArchitect), 1000);
     });
 
     async function connectWallet() {
         if (window.ethereum) {
-            try {
-                const web3Provider = new ethers.BrowserProvider(window.ethereum);
-                const accounts = await web3Provider.send("eth_requestAccounts", []);
-                signer = await web3Provider.getSigner();
-                contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-                currentArchitect = accounts[0];
-                document.getElementById('connectBtn').style.display = "none";
-                document.getElementById('depBtn').style.display = "block";
-                document.getElementById('harvBtn').style.display = "block";
-                document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + currentArchitect;
-            } catch (err) { console.error(err); }
+            const web3Provider = new ethers.BrowserProvider(window.ethereum);
+            const accounts = await web3Provider.send("eth_requestAccounts", []);
+            signer = await web3Provider.getSigner();
+            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+            currentArchitect = accounts[0];
+            document.getElementById('connectBtn').style.display = "none";
+            document.getElementById('depBtn').style.display = "block";
+            document.getElementById('harvBtn').style.display = "block";
         }
-    }
-
-    function initSync() {
-        setInterval(() => loadData(currentArchitect), 1000);
     }
 
     async function loadData(userAddr) {
@@ -135,55 +138,55 @@
             const vpFromContract = await contract.getVotingPower(userAddr);
 
             const depositVal = parseFloat(ethers.formatEther(userData.deposit));
-            const globalRwaVal = parseFloat(ethers.formatEther(gRwa));
-            const contractAccumulated = parseFloat(ethers.formatEther(userData.accumulatedAir));
-            const rwaBonus = parseFloat(ethers.formatEther(userData.physicalInfra));
+            const rwaUnits = parseFloat(ethers.formatEther(userData.physicalInfra));
+            const contractAccumulatedAir = parseFloat(ethers.formatEther(userData.accumulatedAir));
             const lastUpdate = Number(userData.lastUpdate);
 
-            if (depositVal === 0 && rwaBonus === 0) {
-                document.getElementById('statusMsg').innerText = "ARCHITECT NOT FOUND ON-CHAIN";
-                return;
-            }
+            if (depositVal === 0 && rwaUnits === 0) return;
 
             const now = Math.floor(Date.now() / 1000);
             const timeInProtocol = now - lastUpdate;
 
-            // 1. Time Bonus (Loyalty) - Αυξάνεται με τον χρόνο παραμονής
-            let timeMultiplier = 1 + (timeInProtocol * 0.00000002); 
-            
-            // 2. Inflation Impact - Επηρεάζει μόνο τον αέρα, ανεξάρτητα από το κεφάλαιο
-            let inflationGrowth = (contractAccumulated * currentMarketInflation * timeInProtocol) / 31536000;
-            let liveAir = contractAccumulated + inflationGrowth;
+            // 1. Time Bonus: Αυξάνεται με τον χρόνο, Boost από Harvest (RWA), Μηδενίζεται αν φύγει το κεφάλαιο
+            let timeFactor = depositVal > 0 ? (1 + (timeInProtocol * 0.00000008)) : 0;
+            let harvestBoost = (rwaUnits * 0.15); 
+            let finalTimeMultiplier = timeFactor + harvestBoost;
 
-            // 3. Saturation & Efficiency - Τιμωρία αν ο αέρας > 10% του κεφαλαίου
+            // 2. Air Calculation: 
+            // Ο αέρας της κατάθεσης (10%) στο συμβόλαιο "καίγεται" στο Harvest.
+            // Ο πληθωρισμός δρα μόνο πάνω στον εναπομείναντα αέρα.
+            let inflationAir = (contractAccumulatedAir * currentMarketInflation * timeInProtocol) / 31536000;
+            let liveAir = contractAccumulatedAir + inflationAir;
+
+            // 3. Efficiency & Saturation
             let threshold = depositVal * 0.10;
             let userSaturation = threshold > 0 ? (liveAir / threshold) * 100 : 0;
             let efficiency = userSaturation > 100 ? Math.max(0, 100 - (userSaturation - 100) * 10) : 100;
             
-            // 4. Voting Power - Ενισχύεται από χρόνο, μειώνεται αν αφαιρεθεί κεφάλαιο (baseVP) ή λόγω saturation
-            let totalVP = parseFloat(ethers.formatEther(vpFromContract)) * timeMultiplier * (efficiency/100);
+            // 4. VP Calculation
+            let totalVP = parseFloat(ethers.formatEther(vpFromContract)) * finalTimeMultiplier * (efficiency/100);
 
+            // UI
             document.getElementById('safeCap').innerText = depositVal.toFixed(4);
             document.getElementById('vpVal').innerText = totalVP.toFixed(6); 
-            document.getElementById('loyaltyStatus').innerHTML = `Time Bonus: x${timeMultiplier.toFixed(7)}`;
+            document.getElementById('loyaltyStatus').innerText = `Time Bonus: x${finalTimeMultiplier.toFixed(6)}`;
             document.getElementById('airVal').innerText = liveAir.toFixed(10);
-            document.getElementById('rwaVal').innerText = rwaBonus.toFixed(4); // RWA Persist
+            document.getElementById('rwaVal').innerText = rwaUnits.toFixed(4);
             document.getElementById('efficiencyBar').style.width = efficiency + "%";
+            document.getElementById('difficultyMsg').innerText = `Saturation: ${userSaturation.toFixed(2)}%`;
+            document.getElementById('globalRwa').innerText = parseFloat(ethers.formatEther(gRwa)).toFixed(2) + " Units";
             
-            let isSolidified = (liveAir < 0.00001);
+            let isSafe = userSaturation < 100;
+            document.getElementById('integrityVal').innerText = isSafe ? "SOLID" : "AT RISK";
+            document.getElementById('integrityVal').style.color = isSafe ? "var(--primary)" : "var(--danger)";
 
             document.getElementById('statusMsg').innerHTML = `
                 <div style="display:flex; justify-content:space-around; font-size:0.8rem;">
-                    <span>📡 INFLATION ORACLE: ${(currentMarketInflation * 100).toFixed(2)}%</span>
-                    <span style="color:${isSolidified ? 'var(--primary)' : 'var(--danger)'}">
-                        ${isSolidified ? '🔒 DEBT: SOLIDIFIED ✅' : '⚠️ MARKET AIR: ' + liveAir.toFixed(4)}
+                    <span>🛡️ CAPITAL PROTECTION: ACTIVE</span>
+                    <span style="color:${isSafe ? 'var(--primary)' : 'var(--danger)'}">
+                        ${isSafe ? '✅ SYSTEM STABLE' : '⚠️ INFLATION OVERLOAD'}
                     </span>
                 </div>`;
-            document.getElementById('difficultyMsg').innerText = `Saturation: ${userSaturation.toFixed(2)}%`;
-            
-            document.getElementById('globalAir').innerText = (rwaBonus).toFixed(4) + " ETH";
-            document.getElementById('globalRwa').innerText = globalRwaVal.toFixed(2) + " Units";
-            document.getElementById('inflationRed').innerText = "-" + (rwaBonus * 0.21).toFixed(4) + "%";
             
             document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + userAddr;
 
@@ -191,26 +194,18 @@
     }
 
     async function deposit() {
-        if (!signer) return alert("Connect Wallet first!");
-        const amount = prompt("ETH to deposit (Negative to withdraw):", "0.01");
-        if (amount && !isNaN(amount)) {
-            try {
-                const txContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-                const tx = await txContract.deposit({ value: ethers.parseEther(amount) });
-                await tx.wait();
-                alert("Transaction Successful!");
-            } catch (e) { alert("Transaction failed."); }
+        if (!signer) return;
+        const amount = prompt("ETH for Safe Capital (Generates 10% Market Air):", "0.01");
+        if (amount) {
+            const tx = await contract.deposit({ value: ethers.parseEther(amount) });
+            await tx.wait();
         }
     }
 
     async function harvest() {
-        if (!signer) return alert("Connect Wallet first!");
-        try {
-            const txContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-            const tx = await txContract.airHarvest();
-            await tx.wait();
-            alert("Solidification Successful!");
-        } catch (e) { alert("Solidification failed."); }
+        if (!signer) return;
+        const tx = await contract.airHarvest();
+        await tx.wait();
     }
 </script>
 </body>
