@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Persistent Stress Test v12.9</title>
+    <title>RVP Protocol | Architect v13.5</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
         :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
@@ -30,7 +30,7 @@
 <div class="dashboard">
     <header>
         <div>
-            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v12.9</span></h1>
+            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v13.5</span></h1>
             <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">Status: Initializing...</div>
         </div>
         <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
@@ -86,19 +86,15 @@
         {"inputs":[],"name":"airHarvest","outputs":[],"stateMutability":"nonpayable","type":"function"},
         {"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"getVotingPower","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
         {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"users","outputs":[{"internalType":"uint256","name":"deposit","type":"uint256"},{"internalType":"uint256","name":"physicalInfra","type":"uint256"},{"internalType":"uint256","name":"lastUpdate","type":"uint256"},{"internalType":"uint256","name":"accumulatedAir","type":"uint256"}],"stateMutability":"view","type":"function"},
-        {"inputs":[],"name":"totalGlobalRWA","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-        {"inputs":[],"name":"totalGlobalAir","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+        {"inputs":[],"name":"totalGlobalRWA","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
     ];
     const CONTRACT_ADDRESS = "0x99e09C98f0548Aba8803221157e653B82e345980";
     let provider, signer, contract;
-    let currentArchitect = "0x42C56AAa94359307F4f5eD603c802Cb1a0F67691"; // Η διεύθυνσή σου από το screenshot
+    let currentArchitect = "0x42C56AAa94359307F4f5eD603c802Cb1a0F67691"; 
 
-    // Oracle Simulation
     setInterval(() => { marketInf = 0.041 + (Math.random() * 0.004); }, 5000);
 
-    // Αυτόματη εκκίνηση για Read-Only (για Chrome κινητού)
     window.addEventListener('load', async () => {
-        // Χρήση public RPC για να βλέπουμε δεδομένα ακόμα και χωρίς wallet
         provider = new ethers.JsonRpcProvider("https://rpc.ankr.com/eth"); 
         contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
         initSync();
@@ -110,12 +106,16 @@
                 const web3Provider = new ethers.BrowserProvider(window.ethereum);
                 const accounts = await web3Provider.send("eth_requestAccounts", []);
                 signer = await web3Provider.getSigner();
+                
+                // ΕΔΩ ΕΙΝΑΙ Η ΔΙΟΡΘΩΣΗ: Επανα-ορίζουμε το contract με τον SIGNER
                 contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+                
                 currentArchitect = accounts[0];
                 document.getElementById('connectBtn').style.display = "none";
                 document.getElementById('depBtn').style.display = "block";
                 document.getElementById('harvBtn').style.display = "block";
                 document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + currentArchitect;
+                document.getElementById('statusMsg').innerText = "WALLET CONNECTED - READY TO SOLIDIFY";
             } catch (err) { console.error(err); }
         } else {
             window.location.href = "https://metamask.app.link/dapp/" + window.location.href.replace(/^https?:\/\//, '');
@@ -146,7 +146,6 @@
             const now = Math.floor(Date.now() / 1000);
             const timeInProtocol = now - lastUpdate;
             
-            // Η αλήθεια του Blockchain:
             const initialDebtCleared = (contractAccumulated === 0 && rwaBonus > 0);
             let fixedDebt = initialDebtCleared ? 0 : (depositVal * 0.10);
             let liveInflationAir = (depositVal * 0.0425 * timeInProtocol) / 31536000;
@@ -173,12 +172,6 @@
             document.getElementById('globalAir').innerText = (liveAir + rwaBonus).toFixed(4) + " ETH";
             document.getElementById('globalRwa').innerText = globalRwaVal.toFixed(2) + " Units";
             document.getElementById('inflationRed').innerText = "-" + (rwaBonus * 0.002 * 100).toFixed(4) + "%";
-            
-            if (userAddr === accounts[0]) {
-                document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + userAddr;
-            } else {
-                document.getElementById('userWallet').innerText = "VIEWING ARCHITECT: " + userAddr;
-            }
 
         } catch (e) { }
     }
@@ -188,8 +181,11 @@
         const amount = prompt("ETH to deposit:", "0.1");
         if (amount && !isNaN(amount)) {
             try {
+                // Χρήση του contract που είναι ήδη δεσμευμένο με τον signer
                 const tx = await contract.deposit({ value: ethers.parseEther(amount) });
+                document.getElementById('statusMsg').innerText = "TRANSACTION PENDING...";
                 await tx.wait();
+                location.reload();
             } catch (e) { alert("Transaction failed."); }
         }
     }
@@ -197,8 +193,11 @@
     async function harvest() {
         if (!signer) return alert("Connect Wallet first!");
         try {
+            // Χρήση του contract που είναι ήδη δεσμευμένο με τον signer
             const tx = await contract.airHarvest();
+            document.getElementById('statusMsg').innerText = "HARVESTING AIR... PLEASE WAIT";
             await tx.wait();
+            location.reload();
         } catch (e) { alert("Solidification failed."); }
     }
 </script>
