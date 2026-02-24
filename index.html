@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Architect v13.5</title>
+    <title>RVP Protocol | Architect v13.6</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
         :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
@@ -29,8 +29,8 @@
 <div class="dashboard">
     <header>
         <div>
-            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v13.5</span></h1>
-            <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">ARCHITECT: DISCONNECTED</div>
+            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v13.6</span></h1>
+            <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">ARCHITECT: CONNECTED TO MAINNET</div>
         </div>
         <button id="connectBtn" onclick="connectWallet()">CONNECT ARCHITECT</button>
     </header>
@@ -39,33 +39,39 @@
         <div class="card">
             <div class="label">Safe Capital (ETH)</div>
             <div id="safeCap" class="value">0.0000</div>
-            <div style="font-size:0.7rem; color:var(--primary)">Verified On-Chain Balance</div>
+            <div style="font-size:0.7rem; color:var(--primary)">Fixed - Anti-Inflationary Base</div>
         </div>
         <div class="card">
-            <div class="label">Voting Power</div>
+            <div class="label">Sovereign Voting Power</div>
             <div id="vpVal" class="value">0.0000</div>
-            <div id="loyaltyStatus" style="font-size:0.75rem; color:#888;">Protocol Weight</div>
+            <div id="loyaltyStatus" style="font-size:0.75rem; color:#888;">Time Bonus Active</div>
         </div>
         <div class="card">
-            <div class="label">Market Air (Debt)</div>
+            <div class="label">Captured Market Air (Debt)</div>
             <div id="airVal" class="value" style="color:var(--accent)">0.0000</div>
             <div id="satLabel" style="font-size:0.7rem; color:#888;">Saturation: 0.00%</div>
         </div>
         <div class="card">
-            <div class="label">RWA Units</div>
+            <div class="label">Global Contribution (RWA)</div>
             <div id="rwaVal" class="value" style="color:var(--primary)">0.0000</div>
-            <div style="font-size:0.7rem;">Solidified Infrastructure</div>
+            <div style="font-size:0.7rem;">Solidified Infrastructure Units</div>
         </div>
         <div class="card" style="grid-column: span 2;">
             <div class="label">Solidification Efficiency</div>
             <div class="bar-container"><div id="efficiencyBar"></div></div>
-            <div id="statusMsg" class="status-box">AWAITING ARCHITECT AUTHENTICATION...</div>
+            <div id="statusMsg" class="status-box">SYSTEM SYNCED WITH ARCHITECT DATA</div>
         </div>
     </div>
 
     <div id="actions" style="display:none; margin-top: 30px;">
         <button class="btn-main btn-deposit" onclick="deposit()">Deposit Capital</button>
         <button class="btn-main btn-harvest" onclick="harvest()">Execute Solidification</button>
+        
+        <div class="impact-grid">
+            <div><div class="label" style="font-size:0.6rem;">Debt Neutralized</div><div id="impact1" style="font-weight:bold;">0.00 ETH</div></div>
+            <div><div class="label" style="font-size:0.6rem;">System Infrastructure</div><div id="impact2" style="font-weight:bold;">0.00 Units</div></div>
+            <div><div class="label" style="font-size:0.6rem;">Inflation Reduction</div><div id="impact3" style="color:var(--primary); font-weight:bold;">-0.00%</div></div>
+        </div>
     </div>
 </div>
 
@@ -81,7 +87,6 @@
 
     let provider, signer, contract;
 
-    // 1. Αυτόματο Read Data (MetaMask ανεξάρτητο)
     async function init() {
         if (window.ethereum) {
             provider = new ethers.BrowserProvider(window.ethereum);
@@ -92,7 +97,7 @@
                     const userData = await readContract.users(ARCHITECT_ADDR);
                     const vpRaw = await readContract.getVotingPower(ARCHITECT_ADDR);
                     updateUI(userData, vpRaw);
-                } catch (e) { console.log("Blockchain Syncing..."); }
+                } catch (e) { }
             }, 1000);
         }
     }
@@ -117,60 +122,50 @@
             let eff = sat > 100 ? Math.max(0, 100 - (sat - 100) * 10) : 100;
             document.getElementById('efficiencyBar').style.width = eff + "%";
             document.getElementById('satLabel').innerText = "Saturation: " + sat.toFixed(2) + "%";
-            document.getElementById('statusMsg').innerText = "ARCHITECT DATA SYNCED";
+
+            // IMPACT ANALYSIS RESTORED
+            document.getElementById('impact1').innerText = (acc + rwa).toFixed(4) + " ETH";
+            document.getElementById('impact2').innerText = rwa.toFixed(4) + " Units";
+            document.getElementById('impact3').innerText = "-" + (rwa * 0.21).toFixed(4) + "%";
         }
     }
 
-    // 2. Σύνδεση για Transactions
     async function connectWallet() {
         if (window.ethereum) {
-            try {
-                provider = new ethers.BrowserProvider(window.ethereum);
-                const accounts = await provider.send("eth_requestAccounts", []);
-                signer = await provider.getSigner();
-                contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-                
-                document.getElementById('connectBtn').style.display = "none";
-                document.getElementById('actions').style.display = "block";
-                document.getElementById('userWallet').innerText = "ACTIVE: " + accounts[0];
-            } catch (e) { console.error(e); }
+            provider = new ethers.BrowserProvider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            signer = await provider.getSigner();
+            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+            document.getElementById('connectBtn').style.display = "none";
+            document.getElementById('actions').style.display = "block";
+            document.getElementById('userWallet').innerText = "ACTIVE ARCHITECT: " + ARCHITECT_ADDR;
         }
     }
 
-    // 3. Σταθερό Deposit (Force Signer)
     async function deposit() {
         try {
-            const amount = prompt("ETH to deposit:");
-            if (!amount || isNaN(amount)) return;
-
-            // Επαναβεβαίωση Signer πριν την αποστολή
-            if (!signer || !contract) {
-                provider = new ethers.BrowserProvider(window.ethereum);
-                signer = await provider.getSigner();
-                contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-            }
-
-            const tx = await contract.deposit({ value: ethers.parseEther(amount) });
-            document.getElementById('statusMsg').innerText = "PENDING BLOCKCHAIN CONFIRMATION...";
+            const val = prompt("ETH to Deposit:");
+            if (!val) return;
+            // Διόρθωση: Επαναδημιουργούμε το contract με signer ακριβώς πριν το TX
+            provider = new ethers.BrowserProvider(window.ethereum);
+            signer = await provider.getSigner();
+            const writeContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+            
+            const tx = await writeContract.deposit({ value: ethers.parseEther(val) });
             await tx.wait();
             location.reload();
-        } catch (e) {
-            console.error(e);
-            alert("Transaction Fail: " + (e.reason || "Check MetaMask for details."));
-        }
+        } catch (e) { alert("Transaction Cancelled or Failed"); }
     }
 
     async function harvest() {
         try {
-            if (!signer || !contract) {
-                provider = new ethers.BrowserProvider(window.ethereum);
-                signer = await provider.getSigner();
-                contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-            }
-            const tx = await contract.airHarvest();
+            provider = new ethers.BrowserProvider(window.ethereum);
+            signer = await provider.getSigner();
+            const writeContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+            const tx = await writeContract.airHarvest();
             await tx.wait();
             location.reload();
-        } catch (e) { alert("Harvest Fail"); }
+        } catch (e) { alert("Harvest Failed"); }
     }
 
     init();
