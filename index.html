@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Persistent Stress Test v12.9</title>
+    <title>RVP Protocol | Persistent Stress Test v12.9.4</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
         :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
@@ -30,7 +30,7 @@
 <div class="dashboard">
     <header>
         <div>
-            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v12.9.1</span></h1>
+            <h1 style="margin:0;">RVP Protocol <span style="color:var(--primary)">v12.9.4</span></h1>
             <div id="userWallet" style="font-size:0.75rem; color:var(--secondary); font-family:monospace; margin-top:5px;">Status: Initializing...</div>
         </div>
         <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
@@ -91,17 +91,12 @@
     ];
     const CONTRACT_ADDRESS = "0x99e09C98f0548Aba8803221157e653B82e345980";
     let provider, signer, contract;
-    let currentArchitect = "0x42C56AAa94359307F4f5eD603c802Cb1a0F67691";
+    let currentArchitect = "0x42C56AAa94359307F4f5eD603c802Cb1a0F67691"; 
 
     setInterval(() => { marketInf = 0.041 + (Math.random() * 0.004); }, 5000);
 
-    // ΔΙΟΡΘΩΣΗ 1: Χρήση του Arbitrum Sepolia RPC αντί για το Ankr Mainnet
     window.addEventListener('load', async () => {
-        if (window.ethereum) {
-            provider = new ethers.BrowserProvider(window.ethereum);
-        } else {
-            provider = new ethers.JsonRpcProvider("https://sepolia-rollup.arbitrum.io/rpc");
-        }
+        provider = new ethers.JsonRpcProvider("https://arbitrum-sepolia.blockpi.network/v1/rpc/public"); 
         contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
         initSync();
     });
@@ -138,72 +133,64 @@
             const rwaBonus = parseFloat(ethers.formatEther(userData.physicalInfra));
             const lastUpdate = Number(userData.lastUpdate);
 
-            if (depositVal === 0 && rwaBonus === 0) {
-                document.getElementById('statusMsg').innerText = "ARCHITECT NOT FOUND ON-CHAIN";
-                return;
-            }
+            if (depositVal === 0 && rwaBonus === 0) return;
 
             const now = Math.floor(Date.now() / 1000);
             const timeInProtocol = now - lastUpdate;
-            const initialDebtCleared = (contractAccumulated === 0 && rwaBonus > 0);
-            let fixedDebt = initialDebtCleared ? 0 : (depositVal * 0.10);
-            let liveInflationAir = (depositVal * 0.0425 * timeInProtocol) / 31536000;
-            let liveAir = fixedDebt + contractAccumulated + liveInflationAir;
+            
+            // 1. Διόρθωση 10%: Υπολογισμός χρέους μόνο για το κεφάλαιο που ΔΕΝ έχει καλυφθεί από RWA
+            let baseDebt = Math.max(0, (depositVal * 0.10) - rwaBonus);
+
+            // 2. Αντίσταση στον Πληθωρισμό: Όσο αυξάνεται το RWA, ο αέρας ανεβαίνει πιο δύσκολα
+            let resistance = 1 / (1 + (rwaBonus / (depositVal * 0.10 || 1)));
+            let effectiveRate = 0.0425 * resistance;
+
+            // 3. Υπολογισμός Live Air (Χρέος + Πληθωρισμός με Resistance)
+            let liveInflationAir = (depositVal * effectiveRate * timeInProtocol) / 31536000;
+            let liveAir = baseDebt + contractAccumulated + liveInflationAir;
 
             let threshold = depositVal * 0.10;
             let userSaturation = threshold > 0 ? (liveAir / threshold) * 100 : 0;
             let efficiency = userSaturation > 100 ? Math.max(0, 100 - (userSaturation - 100) * 10) : 100;
             let timeMultiplier = 1 + (timeInProtocol * 0.0000001);
-            let totalVP = parseFloat(ethers.formatEther(vpFromContract)) * (efficiency/100);
 
             document.getElementById('safeCap').innerText = depositVal.toFixed(4);
-            document.getElementById('vpVal').innerText = totalVP.toFixed(6); 
-            document.getElementById('loyaltyStatus').innerHTML = `Time Bonus Active`;
+            document.getElementById('vpVal').innerText = (parseFloat(ethers.formatEther(vpFromContract)) * timeMultiplier * (efficiency/100)).toFixed(6); 
+            document.getElementById('loyaltyStatus').innerHTML = `Time Bonus: <b style="color:white">x${timeMultiplier.toFixed(8)}</b>`;
             document.getElementById('airVal').innerText = liveAir.toFixed(10);
             document.getElementById('rwaVal').innerText = rwaBonus.toFixed(4);
             document.getElementById('efficiencyBar').style.width = efficiency + "%";
             document.getElementById('statusMsg').innerHTML = `
                 <div style="display:flex; justify-content:space-around; font-size:0.8rem;">
-                    <span>📡 ORACLE: ${(marketInf * 100).toFixed(2)}%</span>
-                    <span style="color:${initialDebtCleared ? 'var(--primary)' : 'white'}">🔒 DEBT: ${initialDebtCleared ? 'SOLIDIFIED ✅' : fixedDebt.toFixed(4)}</span>
+                    <span>📡 EFFECTIVE RATE: ${(effectiveRate * 100).toFixed(3)}%</span>
+                    <span style="color:${baseDebt < 0.0001 ? 'var(--primary)' : 'white'}">🔒 DEBT: ${baseDebt < 0.0001 ? 'SOLIDIFIED ✅' : baseDebt.toFixed(4)}</span>
                 </div>`;
             document.getElementById('difficultyMsg').innerText = `Saturation: ${userSaturation.toFixed(2)}%`;
             document.getElementById('globalAir').innerText = (liveAir + rwaBonus).toFixed(4) + " ETH";
             document.getElementById('globalRwa').innerText = globalRwaVal.toFixed(2) + " Units";
-            document.getElementById('inflationRed').innerText = "-" + (rwaBonus * 0.21).toFixed(4) + "%";
+            document.getElementById('inflationRed').innerText = "-" + ((1 - resistance) * 100).toFixed(2) + "%";
             
             document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + userAddr;
 
         } catch (e) { }
     }
 
-    // ΔΙΟΡΘΩΣΗ 2: Αφαίρεση gasLimit για να το υπολογίσει το Arbitrum αυτόματα
     async function deposit() {
         if (!signer) return alert("Connect Wallet first!");
-        const amount = prompt("ETH to deposit:", "0.01");
+        const amount = prompt("ETH to deposit:", "0.1");
         if (amount && !isNaN(amount)) {
             try {
-                // Δημιουργία καθαρού συμβολαίου για τη συναλλαγή
-                const txContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-                const tx = await txContract.deposit({ 
-                    value: ethers.parseEther(amount) 
-                });
+                const tx = await contract.deposit({ value: ethers.parseEther(amount) });
                 await tx.wait();
-                alert("Deposit Successful!");
-            } catch (e) { 
-                console.error(e);
-                alert("Transaction failed. Check MetaMask."); 
-            }
+            } catch (e) { alert("Transaction failed."); }
         }
     }
 
     async function harvest() {
         if (!signer) return alert("Connect Wallet first!");
         try {
-            const txContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-            const tx = await txContract.airHarvest();
+            const tx = await contract.airHarvest();
             await tx.wait();
-            alert("Solidification Successful!");
         } catch (e) { alert("Solidification failed."); }
     }
 </script>
