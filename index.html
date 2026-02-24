@@ -60,7 +60,7 @@
         <div class="card" style="grid-column: span 2;">
             <div class="label">Solidification Efficiency</div>
             <div class="bar-container"><div id="efficiencyBar"></div></div>
-            <div id="statusMsg" class="status-box">SYNCING FROM BLOCKCHAIN...</div>
+            <div id="statusMsg" class="status-box">INITIALIZING...</div>
         </div>
     </div>
 
@@ -80,7 +80,7 @@
 </div>
 
 <script>
-    let marketInf = 0.0434; 
+    let marketInf = 0.0434;
     const ABI = [
         {"inputs":[],"name":"deposit","outputs":[],"stateMutability":"payable","type":"function"},
         {"inputs":[],"name":"airHarvest","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -89,7 +89,6 @@
         {"inputs":[],"name":"totalGlobalRWA","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
         {"inputs":[],"name":"totalGlobalAir","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
     ];
-    
     const CONTRACT_ADDRESS = "0x99e09C98f0548Aba8803221157e653B82e345980";
     let provider, signer, contract;
 
@@ -98,17 +97,23 @@
     async function connectWallet() {
         if (window.ethereum) {
             try {
+                // Χρήση BrowserProvider για συμβατότητα με ethers v6
                 provider = new ethers.BrowserProvider(window.ethereum);
-                await provider.send("eth_requestAccounts", []);
+                const accounts = await provider.send("eth_requestAccounts", []);
                 signer = await provider.getSigner();
                 contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-                const addr = await signer.getAddress();
+                
+                const addr = accounts[0];
                 document.getElementById('connectBtn').style.display = "none";
                 document.getElementById('depBtn').style.display = "block";
                 document.getElementById('harvBtn').style.display = "block";
                 document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + addr;
+                
+                // Άμεση κλήση για κινητά
+                await loadData(addr);
+                // Loop
                 setInterval(() => loadData(addr), 1000);
-            } catch (err) { console.error(err); }
+            } catch (err) { alert("Connection Error: " + err.message); }
         } else {
             window.location.href = "https://metamask.app.link/dapp/" + window.location.href.replace(/^https?:\/\//, '');
         }
@@ -116,6 +121,7 @@
 
     async function loadData(userAddr) {
         try {
+            if (!contract) return;
             const userData = await contract.users(userAddr);
             const gRwa = await contract.totalGlobalRWA();
             const vpFromContract = await contract.getVotingPower(userAddr);
@@ -126,22 +132,23 @@
             const rwaBonus = parseFloat(ethers.formatEther(userData.physicalInfra));
             const lastUpdate = Number(userData.lastUpdate);
 
-            if (depositVal === 0) return; // Μην προχωράς αν δεν υπάρχει κατάθεση
+            // Αν δεν έχει γίνει ακόμα η πρώτη φόρτωση, δείξε syncing
+            if (depositVal === 0 && rwaBonus === 0) {
+                document.getElementById('statusMsg').innerText = "WAITING FOR BLOCKCHAIN DATA...";
+                return;
+            }
 
             const now = Math.floor(Date.now() / 1000);
             const timeInProtocol = now - lastUpdate;
-            
             const initialDebtCleared = (contractAccumulated === 0 && rwaBonus > 0);
-            let fixedDebt = initialDebtCleared ? 0 : (depositVal * 0.10);
             
-            // Live Inflation: Χρήση σταθερού rate 4.25% για να έχουμε μόνο άνοδο
+            let fixedDebt = initialDebtCleared ? 0 : (depositVal * 0.10);
             let liveInflationAir = (depositVal * 0.0425 * timeInProtocol) / 31536000;
             let liveAir = fixedDebt + contractAccumulated + liveInflationAir;
 
             let threshold = depositVal * 0.10;
-            let userSaturation = (liveAir / threshold) * 100;
+            let userSaturation = threshold > 0 ? (liveAir / threshold) * 100 : 0;
             let efficiency = userSaturation > 100 ? Math.max(0, 100 - (userSaturation - 100) * 10) : 100;
-            
             let timeMultiplier = 1 + (timeInProtocol * 0.0000001);
             let totalVP = parseFloat(ethers.formatEther(vpFromContract)) * timeMultiplier * (efficiency/100);
 
@@ -153,15 +160,15 @@
             document.getElementById('efficiencyBar').style.width = efficiency + "%";
             document.getElementById('statusMsg').innerHTML = `
                 <div style="display:flex; justify-content:space-around; font-size:0.8rem;">
-                    <span>📡 <b>ORACLE:</b> ${(marketInf * 100).toFixed(2)}%</span>
-                    <span style="color:${initialDebtCleared ? 'var(--primary)' : 'white'}">🔒 <b>DEBT:</b> ${initialDebtCleared ? 'SOLIDIFIED ✅' : fixedDebt.toFixed(4)}</span>
+                    <span>📡 ORACLE: ${(marketInf * 100).toFixed(2)}%</span>
+                    <span style="color:${initialDebtCleared ? 'var(--primary)' : 'white'}">🔒 DEBT: ${initialDebtCleared ? 'SOLIDIFIED ✅' : fixedDebt.toFixed(4)}</span>
                 </div>`;
             document.getElementById('difficultyMsg').innerText = `Saturation: ${userSaturation.toFixed(2)}%`;
             document.getElementById('globalAir').innerText = (liveAir + rwaBonus).toFixed(4) + " ETH";
             document.getElementById('globalRwa').innerText = globalRwaVal.toFixed(2) + " Units";
             document.getElementById('inflationRed').innerText = "-" + (rwaBonus * 0.002 * 100).toFixed(4) + "%";
 
-        } catch (e) { console.error("Sync Error:", e); }
+        } catch (e) { console.log("Silent sync..."); }
     }
 
     async function deposit() {
