@@ -3,75 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Industrial v10.2 Restored</title>
+    <title>RVP Protocol | v10.2 Live Oracle Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #000000; --panel: #05080a; --primary: #00f2ff; --secondary: #1a2a3a; --danger: #ff003c; --text: #e0e0e0; --border: #00f2ff; }
+        :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; --border: #1e293b; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; }
+        .dashboard { max-width: 1100px; margin: 0 auto; }
         
-        body { 
-            background: var(--bg); 
-            background-image: linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px);
-            background-size: 30px 30px;
-            color: var(--text); 
-            font-family: 'JetBrains Mono', monospace; 
-            margin: 0; padding: 20px; 
-        }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid var(--border); margin-bottom: 30px; }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 1.8rem; color: var(--secondary); margin: 0; letter-spacing: 2px; }
 
-        .dashboard { 
-            max-width: 1200px; margin: 0 auto; 
-            border: 1px solid rgba(0, 242, 255, 0.2); 
-            background: var(--panel); 
-            padding: 30px;
-            box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.1);
-        }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         
-        header { 
-            border-bottom: 3px double var(--border); 
-            padding-bottom: 20px; margin-bottom: 40px; 
-            display: flex; justify-content: space-between; align-items: center; 
-        }
-
-        h1 { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: var(--primary); text-shadow: 0 0 10px var(--primary); letter-spacing: 4px; }
-
-        .main-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+        .label { color: #94a3b8; font-size: 0.7rem; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
+        .value { font-size: 1.4rem; font-weight: 700; margin: 10px 0; font-family: 'Orbitron', sans-serif; }
         
-        .stat-card { 
-            border: 1px solid #1a2a3a; background: rgba(0,0,0,0.8); padding: 20px; 
-            clip-path: polygon(0 0, 100% 0, 100% 85%, 85% 100%, 0 100%);
-            transition: 0.3s;
-        }
+        .efficiency-panel { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px; }
+        .bar-container { width: 100%; height: 10px; background: #1e293b; border-radius: 5px; margin: 15px 0; overflow: hidden; }
+        #efficiencyBar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--secondary), var(--primary)); transition: 0.5s; }
 
-        .stat-card:hover { border-color: var(--primary); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); }
+        .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .btn { padding: 20px; border-radius: 10px; border: none; font-family: 'Orbitron', sans-serif; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        .btn-dep { background: var(--secondary); color: white; }
+        .btn-harv { background: var(--primary); color: white; }
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
 
-        .label { font-size: 0.7rem; color: #555; text-transform: uppercase; font-weight: 700; margin-bottom: 12px; }
-        .value { font-size: 1.4rem; font-weight: 700; color: #fff; font-family: 'Orbitron'; }
-
-        .efficiency-section { 
-            margin: 30px 0; padding: 20px; border: 1px solid #1a2a3a; 
-            background: linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(10,15,20,1) 100%);
-        }
-
-        .bar-container { width: 100%; height: 10px; background: #111; border: 1px solid #222; margin-top: 15px; }
-        #efficiencyBar { height: 100%; width: 0%; background: var(--primary); box-shadow: 0 0 15px var(--primary); }
-
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 40px; }
+        .oracle-footer { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 30px; padding: 20px; background: rgba(0,0,0,0.4); border-radius: 12px; border: 1px solid var(--border); text-align: center; }
         
-        .btn { 
-            padding: 25px; font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 1.1rem;
-            cursor: pointer; border: 1px solid var(--primary); transition: 0.3s; 
-            background: transparent; color: var(--primary);
-            clip-path: polygon(5% 0, 100% 0, 95% 100%, 0% 100%);
-        }
-
-        .btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 30px var(--primary); }
-
-        .btn-sol { border-color: #fff; color: #fff; }
-        .btn-sol:hover { background: #fff; color: #000; box-shadow: 0 0 30px #fff; }
-
-        #userAddr { font-size: 0.75rem; color: var(--primary); font-family: 'JetBrains Mono'; }
-        
-        .oracle-box { border-left: 4px solid var(--danger); padding-left: 15px; background: rgba(255,0,60,0.05); }
+        #connBtn { background: none; border: 1px solid var(--secondary); color: var(--secondary); padding: 10px 20px; cursor: pointer; border-radius: 5px; font-family: 'Orbitron'; }
+        .live-tag { font-size: 0.6rem; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: middle; animation: blink 1.5s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -79,58 +42,57 @@
 <div class="dashboard">
     <header>
         <div>
-            <h1>RVP PROTOCOL v10.2 <span style="font-size: 0.8rem; color: #333;">(BUILD_14.3)</span></h1>
-            <div id="userAddr">SYSTEM_OFFLINE // CONNECT_TO_NODE</div>
+            <h1>RVP PROTOCOL <span style="color:var(--text); opacity:0.5;">v10.2</span></h1>
+            <div id="userWallet" style="font-size:0.7rem; color:var(--secondary); font-family:monospace; margin-top:5px;">STATUS: OFFLINE</div>
         </div>
-        <button onclick="connectWallet()" id="connBtn" style="border: 1px solid var(--primary); background:none; color:var(--primary); padding:10px 20px; cursor:pointer; font-family:'Orbitron';">LINK_ACCOUNT</button>
+        <button id="connBtn" onclick="connectWallet()">CONNECT ARCHITECT</button>
     </header>
 
-    <div class="main-stats">
-        <div class="stat-card">
+    <div class="grid">
+        <div class="card">
             <div class="label">Safe Capital</div>
             <div id="safeCap" class="value">0.0000</div>
+            <div style="font-size:0.65rem; color:var(--primary)">Anti-Inflationary Base</div>
         </div>
-        <div class="stat-card">
-            <div class="label">Sovereign VP</div>
-            <div id="vpVal" class="value">0.0000</div>
+        <div class="card">
+            <div class="label">Sovereign Voting Power</div>
+            <div id="vpVal" class="value">0.000000</div>
+            <div id="timeBonus" style="font-size:0.65rem; color:var(--accent)">Time Bonus: x1.0000</div>
         </div>
-        <div class="stat-card" style="border-color: var(--danger);">
-            <div class="label">Environmental Air</div>
-            <div id="airVal" class="value" style="color:var(--danger);">0.000000</div>
+        <div class="card">
+            <div class="label">Captured Market Air <span class="live-tag">LIVE</span></div>
+            <div id="airVal" class="value" style="color:var(--accent)">0.00000000</div>
+            <div id="satVal" style="font-size:0.65rem; color:#94a3b8">Saturation: 0.00%</div>
         </div>
-        <div class="stat-card">
-            <div class="label">RWA Infra</div>
-            <div id="rwaVal" class="value">0.0000</div>
+        <div class="card">
+            <div class="label">Infrastructure (RWA)</div>
+            <div id="rwaVal" class="value" style="color:var(--primary)">0.0000</div>
+            <div style="font-size:0.65rem;">Active Nodes</div>
         </div>
     </div>
 
-    <div class="efficiency-section">
-        <div style="display:flex; justify-content:space-between; font-family:'Orbitron'; font-size:0.8rem;">
-            <span>SOLIDIFICATION_EFFICIENCY</span>
-            <span id="efficiencyText">100%</span>
+    <div class="efficiency-panel">
+        <div class="label" style="display:flex; justify-content:space-between;">
+            <span>Solidification Efficiency</span>
+            <span id="effText">100%</span>
         </div>
         <div class="bar-container"><div id="efficiencyBar"></div></div>
+        <div id="statusMsg" style="text-align:center; font-size:0.8rem; font-weight:700; color:var(--primary);">SYSTEM READY</div>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <div class="oracle-box">
-            <div class="label">Oracle Inflation Index</div>
-            <div id="oracleIndex" style="font-size:1.5rem; font-weight:700;">0.00%</div>
-        </div>
-        <div class="stat-card" style="border-color: #fff;">
-            <div class="label">Debt Shield Status</div>
-            <div id="debtStatus" style="font-size:1rem; color:#fff;">UNLOCKED</div>
-        </div>
+    <div class="button-group">
+        <button class="btn btn-dep" onclick="deposit()">Adjust Capital</button>
+        <button class="btn btn-harv" onclick="harvest()">Solidify Air</button>
     </div>
 
-    <div class="btn-group">
-        <button class="btn" onclick="deposit()">Deposit Capital</button>
-        <button class="btn btn-sol" onclick="harvest()">Solidify Air</button>
+    <div class="oracle-footer">
+        <div><div class="label">Live Oracle Inflation</div><div id="oraInf" class="value" style="font-size:1.2rem; color:var(--danger);">3.81%</div></div>
+        <div><div class="label">Global RWA Base</div><div id="oraGlobalRwa" class="value" style="font-size:1.2rem;">0.04</div></div>
+        <div><div class="label">Initial Debt</div><div id="oraInitialDebt" class="value" style="font-size:1.2rem; color:var(--primary);">Solidified</div></div>
     </div>
 </div>
 
 <script>
-    let marketInf = 0.04;
     const CONTRACT_ADDRESS = "0x99e09C98f0548Aba8803221157e653B82e345980";
     const ABI = [
         {"inputs":[],"name":"deposit","outputs":[],"stateMutability":"payable","type":"function"},
@@ -140,82 +102,87 @@
     ];
 
     let provider, signer, contract, currentArchitect;
+    let liveInflation = 0.0381;
+
+    async function syncLiveOracle() {
+        try {
+            const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true');
+            const data = await response.json();
+            // Υπολογίζουμε τον πληθωρισμό ως συνάρτηση της μεταβλητότητας + base rate 3%
+            liveInflation = 0.03 + (Math.abs(data.ethereum.usd_24h_change) / 100);
+            document.getElementById('oraInf').innerText = (liveInflation * 100).toFixed(2) + "%";
+        } catch (e) { console.log("Oracle Sync Error"); }
+    }
+    setInterval(syncLiveOracle, 30000);
+    syncLiveOracle();
 
     async function connectWallet() {
-        if (!window.ethereum) return alert("MetaMask not found");
+        if (!window.ethereum) return;
         provider = new ethers.BrowserProvider(window.ethereum);
-        const accounts = await provider.send("eth_requestAccounts", []);
-        currentArchitect = accounts[0];
-        document.getElementById('userAddr').innerText = "ARCHITECT_ACTIVE // " + currentArchitect;
+        const accs = await provider.send("eth_requestAccounts", []);
+        currentArchitect = accs[0];
+        signer = await provider.getSigner();
+        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+        
+        document.getElementById('userWallet').innerText = "ARCHITECT: " + currentArchitect;
         document.getElementById('connBtn').style.display = "none";
         
-        await syncData();
-        setInterval(syncData, 1000);
+        refresh();
+        setInterval(refresh, 1000);
     }
 
-    async function syncData() {
-        if (!currentArchitect) return;
+    async function refresh() {
+        if (!contract || !currentArchitect) return;
         try {
-            signer = await provider.getSigner();
-            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-            
             const u = await contract.users(currentArchitect);
-            const vpBase = await contract.getVotingPower(currentArchitect);
+            const vp = await contract.getVotingPower(currentArchitect);
             
-            const safeCap = parseFloat(ethers.formatEther(u.deposit));
+            const dep = parseFloat(ethers.formatEther(u.deposit));
             const rwa = parseFloat(ethers.formatEther(u.physicalInfra));
             const airOnChain = parseFloat(ethers.formatEther(u.accumulatedAir));
             const lastUpd = Number(u.lastUpdate);
             const now = Math.floor(Date.now() / 1000);
-            const timeDiff = now - lastUpd;
 
-            // Environmental Air Logic
-            let baseFlux = 0.00015;
+            // LIVE CALCULATION (Persistence)
+            let timePassed = now - lastUpd;
             let resistance = 1 / (1 + (rwa * 2.5));
-            let envGrowth = (baseFlux * marketInf * timeDiff * 100) / 31536000;
-            let totalAir = airOnChain + (envGrowth * resistance);
+            // Ο αέρας παράγεται από τον LIVE δείκτη πληθωρισμού επί μια σταθερή περιβαλλοντική ροή
+            let liveGrowth = (0.00018 * liveInflation * timePassed * 100) / 31536000;
+            let totalAir = airOnChain + (liveGrowth * resistance);
 
-            // UI Update
-            document.getElementById('safeCap').innerText = safeCap.toFixed(4);
-            document.getElementById('airVal').innerText = totalAir.toFixed(8);
+            // UI UPDATES
+            document.getElementById('safeCap').innerText = dep.toFixed(4);
+            document.getElementById('airVal').innerText = totalAir.toFixed(10);
             document.getElementById('rwaVal').innerText = rwa.toFixed(4);
+            document.getElementById('vpVal').innerText = parseFloat(ethers.formatEther(vp)).toFixed(6);
             
-            let threshold = safeCap > 0 ? safeCap * 0.10 : 0.01;
+            let tBonus = 1 + (timePassed * 0.00000005);
+            document.getElementById('timeBonus').innerText = "Time Bonus: x" + tBonus.toFixed(6);
+
+            let threshold = dep > 0 ? dep * 0.10 : 0.01;
             let saturation = (totalAir / threshold) * 100;
-            let efficiency = Math.max(0, 100 - (saturation > 100 ? (saturation - 100) : 0));
+            let eff = Math.max(0, 100 - (saturation > 100 ? (saturation - 100) : 0));
             
             document.getElementById('efficiencyBar').style.width = Math.min(saturation, 100) + "%";
-            document.getElementById('efficiencyText').innerText = Math.round(efficiency) + "%";
-            document.getElementById('vpVal').innerText = (parseFloat(ethers.formatEther(vpBase)) * (efficiency/100)).toFixed(6);
+            document.getElementById('effText').innerText = Math.round(eff) + "%";
+            document.getElementById('satVal').innerText = "Saturation: " + saturation.toFixed(2) + "%";
+            
+            document.getElementById('oraInitialDebt').innerText = airOnChain > 0.00001 ? "Pending" : "Solidified";
+            document.getElementById('oraInitialDebt').style.color = airOnChain > 0.00001 ? "var(--accent)" : "var(--primary)";
 
-            document.getElementById('debtStatus').innerText = airOnChain > 0.000001 ? "SOLIDIFYING..." : "PROTECTED";
-        } catch(e) { console.log(e); }
+        } catch (e) { }
     }
 
     async function deposit() {
-        try {
-            // Re-instantiate signer for every call to ensure MetaMask is active
-            const tempProvider = new ethers.BrowserProvider(window.ethereum);
-            const tempSigner = await tempProvider.getSigner();
-            const tempContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, tempSigner);
-            
-            const amt = prompt("Amount of ETH for Safe Capital:");
-            if (!amt) return;
-            
-            const tx = await tempContract.deposit({ value: ethers.parseEther(amt) });
-            await tx.wait();
-        } catch(e) { alert("Deposit Error: " + e.message); }
+        const amt = prompt("Deposit ETH:");
+        if (!amt) return;
+        const tx = await contract.deposit({ value: ethers.parseEther(amt) });
+        await tx.wait();
     }
 
     async function harvest() {
-        try {
-            const tempProvider = new ethers.BrowserProvider(window.ethereum);
-            const tempSigner = await tempProvider.getSigner();
-            const tempContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, tempSigner);
-            
-            const tx = await tempContract.airHarvest();
-            await tx.wait();
-        } catch(e) { alert("Harvest Error: " + e.message); }
+        const tx = await contract.airHarvest();
+        await tx.wait();
     }
 </script>
 </body>
