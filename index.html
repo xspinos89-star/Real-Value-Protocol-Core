@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVP Protocol | Persistent Stress Test v12.9</title>
+    <title>RVP Protocol | Persistent Stress Test v13.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
         :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
@@ -82,14 +82,15 @@
 <script>
     let marketInf = 0.0430; 
     
+    // Φόρτωση από μνήμη browser
     let accumulatedInflationAir = parseFloat(localStorage.getItem('rvp_accumulated_air')) || 0; 
-    let solidifiedCapital = parseFloat(localStorage.getItem('rvp_solidified_cap')) || 0; 
+    let solidifiedCap = parseFloat(localStorage.getItem('rvp_solidified_cap')) || 0; 
     let lastTimestamp = Math.floor(Date.now() / 1000);
 
     setInterval(() => {
         marketInf = 0.041 + (Math.random() * 0.004);
         localStorage.setItem('rvp_accumulated_air', accumulatedInflationAir);
-        localStorage.setItem('rvp_solidified_cap', solidifiedCapital);
+        localStorage.setItem('rvp_solidified_cap', solidifiedCap);
     }, 5000);
 
     const ABI = [
@@ -137,13 +138,13 @@
             const delta = now - lastTimestamp;
             lastTimestamp = now;
 
-            // Διόρθωση 1: Το χρέος υπολογίζεται ΜΟΝΟ στο νέο κεφάλαιο ( incremental )
-            let fixedDebt = Math.max(0, depositVal - solidifiedCapital) * 0.10;
+            // ΔΙΟΡΘΩΣΗ: Υπολογισμός χρέους μόνο στη ΔΙΑΦΟΡΑ (Incremental)
+            let fixedDebt = Math.max(0, depositVal - solidifiedCap) * 0.10;
             
             let mitigation = rwaBonus * 0.002; 
             let effectiveInf = Math.max(0, marketInf - (globalRwaVal * 0.001));
             
-            // Διόρθωση 2: Ο πληθωρισμός συσσωρεύεται ως Market Air (ανεξάρτητα από το Safe Capital)
+            // ΔΙΟΡΘΩΣΗ: Ο αέρας δεν επηρεάζεται από το Safe Capital πλέον
             accumulatedInflationAir += (effectiveInf * delta) / (365 * 24 * 3600);
 
             let liveAir = fixedDebt + accumulatedInflationAir + contractAccumulated;
@@ -155,7 +156,7 @@
                 efficiency = Math.max(0, 100 - (userSaturation - 100) * 10);
             }
 
-            // Διόρθωση 3: Μηδενισμός VP αν δεν υπάρχει Capital
+            // ΔΙΟΡΘΩΣΗ: Μηδενισμός Voting Power αν δεν υπάρχει κεφάλαιο
             let timeInProtocol = now - Number(userData.lastUpdate);
             let timeMultiplier = 1 + (timeInProtocol * 0.0000001);
             let totalVP = depositVal > 0 ? (parseFloat(ethers.formatEther(vpFromContract)) * timeMultiplier * (efficiency/100)) : 0;
@@ -192,7 +193,6 @@
                 const val = ethers.parseEther(amount);
                 const tx = await contract.deposit({ value: val });
                 await tx.wait();
-                // Δεν μηδενίζουμε το solidifiedCapital εδώ, θα ενημερωθεί στο loadData
                 alert("Deposit Successful!");
             } catch (e) { alert("Transaction failed."); }
         }
@@ -203,10 +203,10 @@
             const tx = await contract.airHarvest();
             await tx.wait();
             
-            // Καταγραφή ότι το τρέχον κεφάλαιο έχει πλέον "καθαριστεί"
+            // Κλειδώνουμε το τρέχον κεφάλαιο ως Solidified
             const userData = await contract.users(await signer.getAddress());
-            solidifiedCapital = parseFloat(ethers.formatEther(userData.deposit));
-            localStorage.setItem('rvp_solidified_cap', solidifiedCapital);
+            solidifiedCap = parseFloat(ethers.formatEther(userData.deposit));
+            localStorage.setItem('rvp_solidified_cap', solidifiedCap);
             
             accumulatedInflationAir = 0;
             localStorage.setItem('rvp_accumulated_air', 0);
