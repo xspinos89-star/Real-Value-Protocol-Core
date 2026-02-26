@@ -45,7 +45,7 @@
         <div class="card">
             <div class="label">Sovereign Voting Power</div>
             <div id="vpVal" class="value">0.0000</div>
-            <div id="loyaltyStatus" style="font-size:0.75rem;">Time Bonus: x1.0000000</div>
+            <div id="loyaltyStatus" style="font-size:0.75rem;">Time Bonus: x1.00000000</div>
         </div>
         <div class="card">
             <div class="label">Captured Market Air (Debt)</div>
@@ -80,19 +80,16 @@
 </div>
 
 <script>
-    let marketInf = 0.0434; 
+    let marketInf = 0.0430; 
     
-    // Φόρτωση από μνήμη browser
     let accumulatedInflationAir = parseFloat(localStorage.getItem('rvp_accumulated_air')) || 0; 
-    let initialDebtCleared = localStorage.getItem('rvp_debt_cleared') === 'true'; 
+    let solidifiedCapital = parseFloat(localStorage.getItem('rvp_solidified_cap')) || 0; 
     let lastTimestamp = Math.floor(Date.now() / 1000);
 
-    // Τυχαία διακύμανση πληθωρισμού
     setInterval(() => {
         marketInf = 0.041 + (Math.random() * 0.004);
-        // Αποθήκευση κάθε 5 δευτερόλεπτα
         localStorage.setItem('rvp_accumulated_air', accumulatedInflationAir);
-        localStorage.setItem('rvp_debt_cleared', initialDebtCleared);
+        localStorage.setItem('rvp_solidified_cap', solidifiedCapital);
     }, 5000);
 
     const ABI = [
@@ -133,7 +130,6 @@
 
             const depositVal = parseFloat(ethers.formatEther(userData.deposit));
             const globalRwaVal = parseFloat(ethers.formatEther(gRwa));
-            const globalAirVal = parseFloat(ethers.formatEther(gAir));
             const contractAccumulated = parseFloat(ethers.formatEther(userData.accumulatedAir));
             const rwaBonus = parseFloat(ethers.formatEther(userData.physicalInfra));
 
@@ -141,18 +137,14 @@
             const delta = now - lastTimestamp;
             lastTimestamp = now;
 
-            // Έλεγχος αν το Blockchain λέει ότι το χρέος καθαρίστηκε
-            if (contractAccumulated === 0 && depositVal > 0 && rwaBonus > 0) {
-                initialDebtCleared = true; 
-            }
-
-            let fixedDebt = initialDebtCleared ? 0 : (depositVal * 0.10);
+            // Διόρθωση 1: Το χρέος υπολογίζεται ΜΟΝΟ στο νέο κεφάλαιο ( incremental )
+            let fixedDebt = Math.max(0, depositVal - solidifiedCapital) * 0.10;
+            
             let mitigation = rwaBonus * 0.002; 
             let effectiveInf = Math.max(0, marketInf - (globalRwaVal * 0.001));
             
-            if (depositVal > 0) {
-                accumulatedInflationAir += (depositVal * effectiveInf * delta) / (365 * 24 * 3600);
-            }
+            // Διόρθωση 2: Ο πληθωρισμός συσσωρεύεται ως Market Air (ανεξάρτητα από το Safe Capital)
+            accumulatedInflationAir += (effectiveInf * delta) / (365 * 24 * 3600);
 
             let liveAir = fixedDebt + accumulatedInflationAir + contractAccumulated;
             let threshold = depositVal * 0.10;
@@ -163,11 +155,11 @@
                 efficiency = Math.max(0, 100 - (userSaturation - 100) * 10);
             }
 
+            // Διόρθωση 3: Μηδενισμός VP αν δεν υπάρχει Capital
             let timeInProtocol = now - Number(userData.lastUpdate);
             let timeMultiplier = 1 + (timeInProtocol * 0.0000001);
-            let totalVP = parseFloat(ethers.formatEther(vpFromContract)) * timeMultiplier * (efficiency/100);
+            let totalVP = depositVal > 0 ? (parseFloat(ethers.formatEther(vpFromContract)) * timeMultiplier * (efficiency/100)) : 0;
 
-            // Update UI
             document.getElementById('safeCap').innerText = depositVal.toFixed(4);
             document.getElementById('vpVal').innerText = totalVP.toFixed(6); 
             document.getElementById('loyaltyStatus').innerHTML = `Time Bonus: <b style="color:white">x${timeMultiplier.toFixed(8)}</b>`;
@@ -178,14 +170,13 @@
             document.getElementById('statusMsg').innerHTML = `
                 <div style="display:flex; justify-content:space-around; font-size:0.8rem;">
                     <span>📡 <b>ORACLE LIVE INFLATION:</b> ${(marketInf * 100).toFixed(2)}%</span>
-                    <span style="color:${initialDebtCleared ? 'var(--primary)' : 'white'}">
-                        🔒 <b>INITIAL DEBT:</b> ${initialDebtCleared ? 'SOLIDIFIED ✅' : fixedDebt.toFixed(4) + ' ETH'}
+                    <span style="color:${fixedDebt === 0 ? 'var(--primary)' : 'white'}">
+                        🔒 <b>NEW DEBT:</b> ${fixedDebt === 0 ? 'SOLIDIFIED ✅' : fixedDebt.toFixed(4) + ' ETH'}
                     </span>
                 </div>`;
             
             document.getElementById('difficultyMsg').innerText = `Saturation: ${userSaturation.toFixed(2)}%`;
 
-            // Debt Neutralized Logic
             let currentNeutralized = liveAir + rwaBonus; 
             document.getElementById('globalAir').innerText = currentNeutralized.toFixed(4) + " ETH";
             document.getElementById('globalRwa').innerText = (globalRwaVal > 0 ? globalRwaVal : rwaBonus).toFixed(2) + " Units";
@@ -201,9 +192,7 @@
                 const val = ethers.parseEther(amount);
                 const tx = await contract.deposit({ value: val });
                 await tx.wait();
-                initialDebtCleared = false; 
-                accumulatedInflationAir = 0;
-                localStorage.setItem('rvp_accumulated_air', 0);
+                // Δεν μηδενίζουμε το solidifiedCapital εδώ, θα ενημερωθεί στο loadData
                 alert("Deposit Successful!");
             } catch (e) { alert("Transaction failed."); }
         }
@@ -213,10 +202,14 @@
         try {
             const tx = await contract.airHarvest();
             await tx.wait();
+            
+            // Καταγραφή ότι το τρέχον κεφάλαιο έχει πλέον "καθαριστεί"
+            const userData = await contract.users(await signer.getAddress());
+            solidifiedCapital = parseFloat(ethers.formatEther(userData.deposit));
+            localStorage.setItem('rvp_solidified_cap', solidifiedCapital);
+            
             accumulatedInflationAir = 0;
-            initialDebtCleared = true; 
             localStorage.setItem('rvp_accumulated_air', 0);
-            localStorage.setItem('rvp_debt_cleared', 'true');
             alert("DEBT NEUTRALIZED.");
         } catch (e) { alert("Solidification failed."); }
     }
