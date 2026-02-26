@@ -87,6 +87,8 @@
 <script>
     let marketInf = 0.0430; 
     let baseGlobalDebt = 315000000000000; // $315T
+    // Persistent Debt Initialization
+    let persistentGlobalDebt = baseGlobalDebt + ((Math.floor(Date.now() / 1000) - 1708985000) * 475000);
     
     let accumulatedInflationAir = parseFloat(localStorage.getItem('rvp_accumulated_air')) || 0; 
     let solidifiedCap = parseFloat(localStorage.getItem('rvp_solidified_cap')) || 0; 
@@ -145,7 +147,6 @@
 
             let fixedDebt = Math.max(0, depositVal - solidifiedCap) * 0.10;
             
-            // Υπολογισμός παγκόσμιας άμυνας για το Personal Inflation
             let effectiveInf = Math.max(0, marketInf - (globalRwaVal * 0.001));
             accumulatedInflationAir += (effectiveInf * delta) / (365 * 24 * 3600);
 
@@ -180,21 +181,24 @@
             
             document.getElementById('difficultyMsg').innerText = `Saturation: ${userSaturation.toFixed(2)}%`;
 
-            // --- UI UPDATE: GLOBAL MACRO (SYNCED WITH BLOCKCHAIN & ORACLE) ---
+            // --- UI UPDATE: GLOBAL MACRO (PERSISTENT FLOW) ---
             
             // 1. Δυναμική ταχύτητα χρέους βάσει Oracle (Base $475k/sec)
             let dynamicVelocity = 475000 * (marketInf / 0.04);
-            let currentGlobalDebt = baseGlobalDebt + ((now - 1708985000) * dynamicVelocity);
+            if (delta > 0) {
+                persistentGlobalDebt += dynamicVelocity * delta;
+            }
             
             // 2. Παγκόσμια Αντίσταση (Platform RWA vs Global Debt)
-            let neutralizedUSD = globalRwaVal * 2500; // ETH Ratio assumption
-            let resistance = (neutralizedUSD / currentGlobalDebt) * 100;
+            let neutralizedUSD = globalRwaVal * 2500; 
+            let resistance = (neutralizedUSD / persistentGlobalDebt) * 100;
 
             // 3. Ενημέρωση Macro Indicators
             document.getElementById('globalAir').innerText = parseFloat(ethers.formatEther(gAir)).toFixed(4) + " ETH";
             document.getElementById('globalRwa').innerText = globalRwaVal.toFixed(2) + " Units";
-            document.getElementById('inflationRed').innerText = "-" + ((marketInf - effectiveInf) * 100).toFixed(4) + "%";
-            document.getElementById('fiatDebt').innerText = "$" + (currentGlobalDebt / 1e12).toFixed(6) + "T";
+            // Global reduction based solely on Global Units
+            document.getElementById('inflationRed').innerText = "-" + (globalRwaVal * 0.1).toFixed(4) + "%";
+            document.getElementById('fiatDebt').innerText = "$" + (persistentGlobalDebt / 1e12).toFixed(6) + "T";
             document.getElementById('impactRatio').innerText = "Resistance: " + resistance.toFixed(12) + "%";
 
         } catch (e) { console.error(e); }
