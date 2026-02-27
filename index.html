@@ -37,6 +37,14 @@
         .duel-box { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
         .campaign-btn { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid var(--secondary); cursor: pointer; transition: 0.2s; }
         .campaign-btn:hover { border-color: var(--primary); background: rgba(16, 185, 129, 0.1); }
+
+        /* ΠΡΟΣΘΗΚΗ: Responsive κανόνες για κινητά */
+        @media (max-width: 768px) {
+            .button-group { grid-template-columns: 1fr; }
+            header { flex-direction: column; gap: 15px; }
+            .impact-stats { grid-template-columns: 1fr 1fr; }
+            .network-select { margin-right: 0; margin-bottom: 10px; }
+        }
     </style>
 </head>
 <body>
@@ -255,7 +263,6 @@
         } catch (e) { console.error(e); }
     }
 
-    // ΑΛΛΑΓΗ: 2 Ξεχωριστές συναρτήσεις Deposit (μία για Crypto και μία για Fiat)
     async function depositCrypto() {
         const selectedChain = document.getElementById('networkSelector').options[document.getElementById('networkSelector').selectedIndex].text;
         const amount = prompt(`ETH to deposit via ${selectedChain}:`, "0.1");
@@ -276,7 +283,6 @@
         }
     }
 
-    // ----------- SOVEREIGN OS FUNCTIONS -----------
     function openSophiaModal() {
         document.getElementById('sophiaModal').style.display = 'flex';
     }
@@ -291,7 +297,6 @@
         await harvest();
     }
 
-    // ----------- ORIGINAL HARVEST LOGIC (UNTOUCHED) -----------
     async function harvest() {
         try {
             const tx = await contract.airHarvest();
