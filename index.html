@@ -213,7 +213,8 @@
             let effectiveInf = Math.max(0, marketInf - (globalRwaVal * 0.001));
             accumulatedInflationAir += (effectiveInf * delta) / (365 * 24 * 3600);
 
-            let liveAir = fixedDebt + accumulatedInflationAir + contractAccumulated;
+            // ΔΙΟΡΘΩΣΗ: Αφαιρούμε το fixedDebt από το άθροισμα γιατί περιλαμβάνεται ήδη στο contractAccumulated
+            let liveAir = accumulatedInflationAir + contractAccumulated;
             let threshold = depositVal * 0.10;
             let userSaturation = threshold > 0 ? (liveAir / threshold) * 100 : 0;
             
