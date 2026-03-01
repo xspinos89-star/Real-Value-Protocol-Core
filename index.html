@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RVP Protocol | Sovereign OS v14.0</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
         :root { --bg: #05070a; --card: #0f172a; --primary: #10b981; --secondary: #3b82f6; --danger: #ef4444; --text: #f8fafc; --accent: #f59e0b; }
         body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; display: flex; justify-content: center; }
@@ -17,7 +17,6 @@
         .bar-container { width: 100%; background: #1e293b; height: 14px; border-radius: 7px; margin: 10px 0; overflow: hidden; }
         #efficiencyBar { height: 100%; width: 100%; background: linear-gradient(90deg, var(--danger), var(--primary)); transition: 0.5s; }
         
-        /* ΑΛΛΑΓΗ: 3 Στήλες για τα κουμπιά ώστε να διατηρηθεί το template */
         .button-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 25px; }
         .btn-main { padding: 18px; border-radius: 12px; border: none; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
         .btn-deposit { background: var(--secondary); color: white; }
@@ -28,7 +27,6 @@
         .impact-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 20px; text-align: center; }
         #connectBtn { padding: 12px 24px; background: var(--secondary); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; }
         
-        /* CSS για Πυλώνες, Selector και Sophia Modal */
         .pillar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 15px; font-size: 0.65rem; text-align: center; }
         .pillar-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 6px; border-radius: 6px; }
         .network-select { padding: 12px; border-radius: 10px; background: var(--card); color: var(--text); border: 1px solid var(--primary); margin-right: 10px; font-weight: 600; cursor: pointer;}
@@ -38,7 +36,6 @@
         .campaign-btn { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid var(--secondary); cursor: pointer; transition: 0.2s; }
         .campaign-btn:hover { border-color: var(--primary); background: rgba(16, 185, 129, 0.1); }
 
-        /* ΠΡΟΣΘΗΚΗ: Responsive κανόνες για κινητά */
         @media (max-width: 768px) {
             .button-group { grid-template-columns: 1fr; }
             header { flex-direction: column; gap: 15px; }
@@ -77,6 +74,7 @@
         </div>
         <div style="display:flex; align-items:center;">
             <select class="network-select" id="networkSelector">
+                <option value="sepolia">🟡 Sepolia Testnet</option>
                 <option value="base">🟢 Base L2 (Low Fee)</option>
                 <option value="eth">🟣 Ethereum Mainnet</option>
                 <option value="arb">🔵 Arbitrum L2</option>
@@ -124,7 +122,6 @@
     <div class="button-group">
         <button id="depCryptoBtn" class="btn-main btn-deposit" onclick="depositCrypto()" style="display:none;">Deposit Crypto</button>
         <button id="depFiatBtn" class="btn-main btn-fiat" onclick="depositFiat()" style="display:none;">Deposit Fiat</button>
-        
         <button id="harvBtn" class="btn-main btn-harvest" onclick="openSophiaModal()" style="display:none;">Execute Solidification</button>
     </div>
 
@@ -144,7 +141,6 @@
 </div>
 
 <script>
-    // ----------- CORE MATH & LOGIC (ABSOLUTELY UNTOUCHED) -----------
     let marketInf = 0.0430; 
     let baseGlobalDebt = 315000000000000; 
     let persistentGlobalDebt = baseGlobalDebt + ((Math.floor(Date.now() / 1000) - 1708985000) * 475000);
@@ -174,14 +170,34 @@
     async function connectWallet() {
         if (window.ethereum) {
             try {
-                provider = new ethers.BrowserProvider(window.ethereum);
+                // ΧΕΙΡΟΥΡΓΙΚΗ ΑΛΛΑΓΗ 3: Αυτόματο Switch στο Sepolia για προσβασιμότητα
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0xaa36a7' }],
+                    });
+                } catch (e) {
+                    if (e.code === 4902) {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: '0xaa36a7',
+                                chainName: 'Sepolia',
+                                rpcUrls: ['https://rpc.sepolia.org'],
+                                nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                                blockExplorerUrls: ['https://sepolia.etherscan.io']
+                            }]
+                        });
+                    }
+                }
+
+                provider = new ethers.providers.Web3Provider(window.ethereum);
                 await provider.send("eth_requestAccounts", []);
-                signer = await provider.getSigner();
+                signer = provider.getSigner();
                 contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
                 const addr = await signer.getAddress();
-                document.getElementById('connectBtn').style.display = "none";
                 
-                // Εμφάνιση των 3 κουμπιών
+                document.getElementById('connectBtn').style.display = "none";
                 document.getElementById('depCryptoBtn').style.display = "block";
                 document.getElementById('depFiatBtn').style.display = "block";
                 document.getElementById('harvBtn').style.display = "block";
@@ -199,33 +215,28 @@
             const gAir = await contract.totalGlobalAir();
             const vpFromContract = await contract.getVotingPower(userAddr);
 
-            const depositVal = parseFloat(ethers.formatEther(userData.deposit));
-            const globalRwaVal = parseFloat(ethers.formatEther(gRwa));
-            const contractAccumulated = parseFloat(ethers.formatEther(userData.accumulatedAir));
-            const rwaBonus = parseFloat(ethers.formatEther(userData.physicalInfra));
+            const depositVal = parseFloat(ethers.utils.formatEther(userData.deposit));
+            const globalRwaVal = parseFloat(ethers.utils.formatEther(gRwa));
+            const contractAccumulated = parseFloat(ethers.utils.formatEther(userData.accumulatedAir));
+            const rwaBonus = parseFloat(ethers.utils.formatEther(userData.physicalInfra));
 
             const now = Math.floor(Date.now() / 1000);
             const delta = now - lastTimestamp;
             lastTimestamp = now;
 
             let fixedDebt = Math.max(0, depositVal - solidifiedCap) * 0.10;
-            
             let effectiveInf = Math.max(0, marketInf - (globalRwaVal * 0.001));
             accumulatedInflationAir += (effectiveInf * delta) / (365 * 24 * 3600);
 
-            // ΔΙΟΡΘΩΣΗ: Αφαιρούμε το fixedDebt από το άθροισμα γιατί περιλαμβάνεται ήδη στο contractAccumulated
             let liveAir = accumulatedInflationAir + contractAccumulated;
             let threshold = depositVal * 0.10;
             let userSaturation = threshold > 0 ? (liveAir / threshold) * 100 : 0;
             
-            let efficiency = 100;
-            if (userSaturation > 100) {
-                efficiency = Math.max(0, 100 - (userSaturation - 100) * 10);
-            }
+            let efficiency = userSaturation > 100 ? Math.max(0, 100 - (userSaturation - 100) * 10) : 100;
 
             let timeInProtocol = now - Number(userData.lastUpdate);
             let timeMultiplier = 1 + (timeInProtocol * 0.0000001);
-            let totalVP = depositVal > 0 ? (parseFloat(ethers.formatEther(vpFromContract)) * timeMultiplier * (efficiency/100)) : 0;
+            let totalVP = depositVal > 0 ? (parseFloat(ethers.utils.formatEther(vpFromContract)) * timeMultiplier * (efficiency/100)) : 0;
 
             document.getElementById('safeCap').innerText = depositVal.toFixed(4);
             document.getElementById('vpVal').innerText = totalVP.toFixed(6); 
@@ -248,14 +259,12 @@
             document.getElementById('difficultyMsg').innerText = `Saturation: ${userSaturation.toFixed(2)}%`;
 
             let dynamicVelocity = 475000 * (marketInf / 0.04);
-            if (delta > 0) {
-                persistentGlobalDebt += dynamicVelocity * delta;
-            }
+            if (delta > 0) { persistentGlobalDebt += dynamicVelocity * delta; }
             
             let neutralizedUSD = globalRwaVal * 2500; 
             let resistance = (neutralizedUSD / persistentGlobalDebt) * 100;
 
-            document.getElementById('globalAir').innerText = parseFloat(ethers.formatEther(gAir)).toFixed(8) + " ETH";
+            document.getElementById('globalAir').innerText = parseFloat(ethers.utils.formatEther(gAir)).toFixed(8) + " ETH";
             document.getElementById('globalRwa').innerText = globalRwaVal.toFixed(2) + " Units";
             document.getElementById('inflationRed').innerText = "-" + (globalRwaVal * 0.1).toFixed(4) + "%";
             document.getElementById('fiatDebt').innerText = "$" + (persistentGlobalDebt / 1e12).toFixed(6) + "T";
@@ -265,11 +274,10 @@
     }
 
     async function depositCrypto() {
-        const selectedChain = document.getElementById('networkSelector').options[document.getElementById('networkSelector').selectedIndex].text;
-        const amount = prompt(`ETH to deposit via ${selectedChain}:`, "0.1");
+        const amount = prompt(`ETH to deposit:`, "0.1");
         if (amount && !isNaN(amount)) {
             try {
-                const val = ethers.parseEther(amount);
+                const val = ethers.utils.parseEther(amount);
                 const tx = await contract.deposit({ value: val });
                 await tx.wait();
                 alert("Crypto Deposit Successful!");
@@ -280,21 +288,15 @@
     function depositFiat() {
         const amount = prompt("EUR/USD to deposit via Bank Transfer:", "100");
         if (amount && !isNaN(amount)) {
-            alert(`Fiat Gateway Simulation:\nInitiating bank transfer for ${amount} EUR/USD.\n\n(In production, this routes via API to generate Safe Capital directly).`);
+            alert(`Fiat Gateway Simulation:\nInitiating bank transfer for ${amount} EUR/USD.`);
         }
     }
 
-    function openSophiaModal() {
-        document.getElementById('sophiaModal').style.display = 'flex';
-    }
-
-    function closeSophiaModal() {
-        document.getElementById('sophiaModal').style.display = 'none';
-    }
+    function openSophiaModal() { document.getElementById('sophiaModal').style.display = 'flex'; }
+    function closeSophiaModal() { document.getElementById('sophiaModal').style.display = 'none'; }
 
     async function executeCampaign(pillarName) {
         closeSophiaModal();
-        console.log("Routing execution to pillar: " + pillarName);
         await harvest();
     }
 
@@ -303,7 +305,7 @@
             const tx = await contract.airHarvest();
             await tx.wait();
             const userData = await contract.users(await signer.getAddress());
-            solidifiedCap = parseFloat(ethers.formatEther(userData.deposit));
+            solidifiedCap = parseFloat(ethers.utils.formatEther(userData.deposit));
             localStorage.setItem('rvp_solidified_cap', solidifiedCap);
             accumulatedInflationAir = 0;
             localStorage.setItem('rvp_accumulated_air', 0);
