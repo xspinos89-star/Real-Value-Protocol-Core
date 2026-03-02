@@ -170,7 +170,6 @@
     async function connectWallet() {
         if (window.ethereum) {
             try {
-                // ΧΕΙΡΟΥΡΓΙΚΗ ΑΛΛΑΓΗ 3: Αυτόματο Switch στο Sepolia για προσβασιμότητα
                 try {
                     await window.ethereum.request({
                         method: 'wallet_switchEthereumChain',
@@ -224,17 +223,17 @@
             const delta = now - lastTimestamp;
             lastTimestamp = now;
 
-            let fixedDebt = Math.max(0, depositVal - solidifiedCap) * 0.10;
+            // ΧΕΙΡΟΥΡΓΙΚΗ ΔΙΟΡΘΩΣΗ: Υπολογισμός New Debt & Air αποκλειστικά από Blockchain δεδομένα
+            let fixedDebt = Math.max(0, depositVal - (rwaBonus * 10)) * 0.10;
             let effectiveInf = Math.max(0, marketInf - (globalRwaVal * 0.001));
-            accumulatedInflationAir += (effectiveInf * delta) / (365 * 24 * 3600);
+            let timeInProtocol = now - Number(userData.lastUpdate);
+            let liveAir = contractAccumulated + (effectiveInf * timeInProtocol) / (365 * 24 * 3600);
 
-            let liveAir = accumulatedInflationAir + contractAccumulated;
             let threshold = depositVal * 0.10;
             let userSaturation = threshold > 0 ? (liveAir / threshold) * 100 : 0;
             
             let efficiency = userSaturation > 100 ? Math.max(0, 100 - (userSaturation - 100) * 10) : 100;
 
-            let timeInProtocol = now - Number(userData.lastUpdate);
             let timeMultiplier = 1 + (timeInProtocol * 0.0000001);
             let totalVP = depositVal > 0 ? (parseFloat(ethers.utils.formatEther(vpFromContract)) * timeMultiplier * (efficiency/100)) : 0;
 
@@ -251,8 +250,8 @@
             document.getElementById('statusMsg').innerHTML = `
                 <div style="display:flex; justify-content:space-around; font-size:0.8rem;">
                     <span>📡 <b>ORACLE LIVE INFLATION:</b> ${(marketInf * 100).toFixed(2)}%</span>
-                    <span style="color:${fixedDebt === 0 ? 'var(--primary)' : 'white'}">
-                        🔒 <b>NEW DEBT:</b> ${fixedDebt === 0 ? 'SOLIDIFIED ✅' : fixedDebt.toFixed(4) + ' ETH'}
+                    <span style="color:${fixedDebt < 0.0001 ? 'var(--primary)' : 'white'}">
+                        🔒 <b>NEW DEBT:</b> ${fixedDebt < 0.0001 ? 'SOLIDIFIED ✅' : fixedDebt.toFixed(4) + ' ETH'}
                     </span>
                 </div>`;
             
