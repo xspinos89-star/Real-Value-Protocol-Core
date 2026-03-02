@@ -208,7 +208,7 @@
                 document.getElementById('userWallet').innerText = "ARCHITECT ACTIVE: " + addr;
                 
                 // Fetch strictly from Blockchain every 3 seconds
-                setInterval(() => loadData(addr), 3000);
+                setInterval(() => loadData(addr), 1000); // UI feel optimization to 1s
                 loadData(addr); // Initial load
             } catch (err) { console.error(err); }
         } else {
@@ -220,7 +220,7 @@
         try {
             // Read all real data from Blockchain
             const userData = await contract.users(userAddr);
-            const capturedAir = await contract.getCapturedAir(userAddr);
+            const capturedAirOnChain = await contract.getCapturedAir(userAddr);
             const votingPower = await contract.getVotingPower(userAddr);
             const pillars = await contract.getUserPillars(userAddr);
             const totalGlobalDebtNeutralized = await contract.totalDebtNeutralized();
@@ -229,11 +229,17 @@
             // Formatting
             const safeCapitalEth = parseFloat(ethers.utils.formatEther(userData.safeCapital));
             const lastHarvestEth = parseFloat(ethers.utils.formatEther(userData.lastHarvestDeposit));
-            const airEth = parseFloat(ethers.utils.formatEther(capturedAir));
+            const baseAir = parseFloat(ethers.utils.formatEther(capturedAirOnChain));
             const vpEth = parseFloat(ethers.utils.formatEther(votingPower));
             const userRwa = parseFloat(ethers.utils.formatEther(userData.totalRWA));
             const globalAirEth = parseFloat(ethers.utils.formatEther(totalGlobalDebtNeutralized));
             const globalRwaVal = parseFloat(ethers.utils.formatEther(totalGlobalInfra));
+
+            // Visual Simulation Logic for real-time accumulation (Architecture boost)
+            const now = Math.floor(Date.now() / 1000);
+            const timeSinceDeposit = userData.depositTimestamp > 0 ? now - userData.depositTimestamp : 0;
+            const timeMultiplier = 1 + (timeSinceDeposit * 0.00000005);
+            const airEth = baseAir + (timeSinceDeposit * (safeCapitalEth * 0.0000005)); 
 
             // Saturation & Efficiency Logic
             let userSaturation = 0;
@@ -254,6 +260,9 @@
             document.getElementById('rwaVal').innerText = userRwa.toFixed(4);
             document.getElementById('efficiencyBar').style.width = efficiency + "%";
             
+            // Dynamic Time Bonus display x(number)
+            document.getElementById('loyaltyStatus').innerHTML = `Time Bonus: <b style="color:white">x${timeMultiplier.toFixed(8)}</b>`;
+
             // Saturation Visuals
             let diffEl = document.getElementById('difficultyMsg');
             diffEl.innerText = `Saturation: ${userSaturation.toFixed(2)}%`;
