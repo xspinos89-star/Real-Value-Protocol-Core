@@ -169,6 +169,7 @@
     // Architect's Contract Address
     const CONTRACT_ADDRESS = "0x052F828D35eDFE00687D7a04591CF0e1d9d38C47";
     let provider, signer, contract;
+    let localAirOffset = parseFloat(localStorage.getItem('rvp_air_offset')) || 0;
 
     async function connectWallet() {
         if (window.ethereum) {
@@ -239,7 +240,11 @@
             const now = Math.floor(Date.now() / 1000);
             const timeSinceDeposit = userData.depositTimestamp > 0 ? now - userData.depositTimestamp : 0;
             const timeMultiplier = 1 + (timeSinceDeposit * 0.00000005);
-            const airEth = baseAir + (timeSinceDeposit * (safeCapitalEth * 0.0000005)); 
+            
+            // Υπολογισμός αέρα με αφαίρεση του τοπικού Offset για ακαριαίο μηδενισμό
+            const totalGenerated = baseAir + (timeSinceDeposit * (safeCapitalEth * 0.0000005)); 
+            let airEth = totalGenerated - localAirOffset;
+            if (airEth < 0) airEth = 0;
 
             // Saturation & Efficiency Logic
             let userSaturation = 0;
@@ -336,11 +341,21 @@
             const tx = await contract.executeSolidification(pillarId);
             await tx.wait();
             
-            // Οπτικός ακαριαίος μηδενισμός του αέρα στο UI
-            document.getElementById('airVal').innerText = "0.00000000";
+            // Χειρουργική ενημέρωση του Offset για μηδενισμό της οθόνης
+            const addr = await signer.getAddress();
+            const userData = await contract.users(addr);
+            const capturedAirOnChain = await contract.getCapturedAir(addr);
+            const safeCapitalEth = parseFloat(ethers.utils.formatEther(userData.safeCapital));
+            const baseAir = parseFloat(ethers.utils.formatEther(capturedAirOnChain));
+            const now = Math.floor(Date.now() / 1000);
+            const timeSinceDeposit = userData.depositTimestamp > 0 ? now - userData.depositTimestamp : 0;
+            
+            // Αποθηκεύουμε την τρέχουσα τιμή ως offset
+            localAirOffset = baseAir + (timeSinceDeposit * (safeCapitalEth * 0.0000005));
+            localStorage.setItem('rvp_air_offset', localAirOffset);
             
             alert("DEBT NEUTRALIZED & SOLIDIFIED TO RWA.");
-            loadData(await signer.getAddress());
+            loadData(addr);
         } catch (e) { 
             console.error(e);
             alert("Solidification failed. Do you have Captured Air to burn?"); 
