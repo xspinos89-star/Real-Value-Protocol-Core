@@ -335,6 +335,10 @@
         try {
             const tx = await contract.executeSolidification(pillarId);
             await tx.wait();
+            
+            // Οπτικός ακαριαίος μηδενισμός του αέρα στο UI
+            document.getElementById('airVal').innerText = "0.00000000";
+            
             alert("DEBT NEUTRALIZED & SOLIDIFIED TO RWA.");
             loadData(await signer.getAddress());
         } catch (e) { 
